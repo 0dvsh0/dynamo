@@ -256,14 +256,50 @@ def agent_note(agent: dict) -> str:
     )
 
 
+def curve_table(curve: list[dict]) -> str:
+    """What the model charged at each image size, measured.
+
+    The estimate scales with pixels; this is the number it has to live up to.
+    Printed as a curve rather than a single number because the shape is the
+    whole result — a ratio at one size would hide a flat line.
+    """
+    if not curve:
+        return ""
+    rows = []
+    for point in curve:
+        counted = point.get("counted")
+        shown = f"{int(counted):,}" if counted is not None else "not reported"
+        rows.append(
+            "<tr>"
+            f"<td>{point.get('width')}×{point.get('height')}</td>"
+            f"<td class='num'>{float(point.get('megapixels') or 0):.3f}</td>"
+            f"<td class='num'>{int(point.get('estimated') or 0):,}</td>"
+            f"<td class='num'>{shown}</td>"
+            "</tr>"
+        )
+    return (
+        '<div class="tablewrap">'
+        '<table>'
+        '<thead><tr><th>Image sent to the model</th><th class="num">megapixels</th>'
+        '<th class="num">estimated tokens</th><th class="num">counted by the model</th>'
+        '</tr></thead>'
+        "<tbody>" + "".join(rows) + "</tbody></table></div>"
+    )
+
+
 def counted_block(agent: dict) -> str:
     """The model's own token count, printed beside the estimate.
 
     The table prices frames from pixel area, which is what makes a budget
     checkable before a model exists and identical on every machine. That number
     is a *model of* a price list. Ollama, asked, reports the tokens it really fed
-    the model — so a run that had a model available can show both, and a reader
-    can see how far to trust the first.
+    the model — so a run that had a model available shows both, and a reader can
+    see how far to trust the first.
+
+    When the two disagree about a crop, the disagreement is reported as a finding
+    instead of being smoothed away. That is the whole reason the count is kept:
+    an estimator that can be caught being wrong is worth more than one nobody
+    checks.
 
     Empty when no model ran: the note above already says why, and there is
     nothing honest to add here.
@@ -282,11 +318,29 @@ def counted_block(agent: dict) -> str:
     estimate_triaged = workflows.get("triaged", {}).get("tokens_after") or 0
     counted_triaged = headline.get("counted_tokens_triaged")
     ratio = headline.get("counted_triaged_vs_whole_pct")
+    estimated_ratio = headline.get("triaged_vs_whole_pct")
+    curve = agent.get("token_curve") or []
 
-    if ratio is None:
-        # A model answered but did not say what it was fed, so only the part that
-        # is a count is shown. Nothing is inferred from the estimate.
-        return (
+    # A counted ratio this close to 100% is a result, not a rounding error, and
+    # it inverts the claim the table above is built around. Say so here, in the
+    # place where a reader has just been looking at a 48% number.
+    flat = ratio is not None and ratio >= 95.0
+
+    if ratio is not None:
+        stats = (
+            '<div class="vgrid">'
+            '<div class="vstat"><span class="k">Every keyframe whole, counted by the model'
+            f'</span><span class="v warn">{num(counted_whole)} tokens</span></div>'
+            '<div class="vstat"><span class="k">Cropped to what moved, counted by the model'
+            f'</span><span class="v">{num(counted_triaged)} tokens</span></div>'
+            '<div class="vstat"><span class="k">Counted, cropped vs whole'
+            f'</span><span class="v">{ratio}%</span></div>'
+            '</div>'
+        )
+    else:
+        # A model answered but never reported what it was fed, so the only figure
+        # that is a count is shown. Nothing is inferred from the estimate.
+        stats = (
             '<div class="vgrid">'
             '<div class="vstat"><span class="k">Every keyframe whole, counted by the model'
             f'</span><span class="v warn">{num(counted_whole)} tokens</span></div>'
@@ -296,24 +350,44 @@ def counted_block(agent: dict) -> str:
             '</div>'
         )
 
-    return (
-        '<div class="vgrid">'
-        '<div class="vstat"><span class="k">Every keyframe whole, counted by the model'
-        f'</span><span class="v warn">{num(counted_whole)} tokens</span></div>'
-        '<div class="vstat"><span class="k">Cropped to what moved, counted by the model'
-        f'</span><span class="v good">{num(counted_triaged)} tokens</span></div>'
-        f'<div class="vstat"><span class="k">Counted, cropped vs whole'
-        f'</span><span class="v">{ratio}%</span></div>'
-        '</div>'
-        '<p class="insp-note"><b>Two counts on purpose, and they differ.</b> The table '
-        'prices a frame from its pixel area, which is what lets a budget be checked before '
-        'a model exists and gives the same answer on every machine. These are what the '
-        'model itself reported being fed — <code>prompt_eval_count</code>, straight from '
-        'the server. They are not the same measurement, so they are not the same number, '
-        'and both are printed because the only way to know how far to trust an estimator '
-        'is to put the real figure beside it. The ratio the layer turns on comes out at '
-        f'{ratio}% counted, {headline.get("triaged_vs_whole_pct")}% estimated.</p>'
-    )
+    if flat:
+        verdict = (
+            '<p class="insp-note"><b>Cropping did not make this model cheaper, and the '
+            'table above is wrong to imply that it does.</b> The same frames cost '
+            f'{num(counted_whole)} tokens sent whole and {num(counted_triaged)} cropped to '
+            f"what moved — {ratio}%, against the {estimated_ratio}% the geometric estimate "
+            'predicted. Both figures are what the model itself reported being fed '
+            '(<code>prompt_eval_count</code>, straight from the server). The curve below '
+            'is why: this server resizes an image up to a fixed '
+            'budget before the vision encoder sees it, so a '
+            f"{curve[0].get('width')}×{curve[0].get('height')} crop costs about the same "
+            'as a whole screen. The crop still cuts the bytes on the wire, and it still '
+            'points the model at the thing that changed. What it does not do on this stack '
+            'is shrink the bill — and the reason is only known because the count was '
+            'taken.</p>'
+        ) if curve else (
+            '<p class="insp-note"><b>Cropping did not make this model cheaper.</b> The same '
+            f'frames cost {num(counted_whole)} tokens whole and {num(counted_triaged)} '
+            f'cropped - {ratio}%, against the {estimated_ratio}% the estimate predicted. '
+            'Both figures are what the model itself reported being fed '
+            '(prompt_eval_count, straight from the server). '
+            'The crop still cuts the bytes on the wire and points the model at what '
+            'changed; what it does not do on this stack is shrink the bill.</p>'
+        )
+    elif ratio is None:
+        verdict = ""
+    else:
+        verdict = (
+            '<p class="insp-note"><b>Two counts on purpose, and they differ.</b> The table '
+            'prices a frame from its pixel area, which is what lets a budget be checked '
+            'before a model exists and gives the same answer on every machine. These are '
+            'what the model itself reported being fed — <code>prompt_eval_count</code>, '
+            'straight from the server. Both are printed because the only way to know how '
+            'far to trust an estimator is to put the real figure beside it. Cropped versus '
+            f'whole comes out at {ratio}% counted, {estimated_ratio}% estimated.</p>'
+        )
+
+    return stats + verdict + curve_table(curve)
 
 
 def state_block(agent: dict) -> str:

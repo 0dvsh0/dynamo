@@ -78,9 +78,21 @@ OUTPUT = HERE / "data" / "agent.json"
 
 #: One question, asked of every frame in every configuration, so the only thing
 #: that varies between columns is how the frame got there.
+#:
+#: The phrasing is load-bearing and was arrived at by measurement, not taste.
+#: Qwen3-VL is a thinking model, and an earlier phrasing — "what went wrong on
+#: this screen, and which step of the checkout does it belong to?" — never
+#: returned: 3,849 characters of reasoning, zero answer tokens, stopped on
+#: length, on every frame. Ollama ignores ``think: false`` for this checkpoint,
+#: so there was no switch to turn off. Asking two *descriptive* questions
+#: instead ("what is on this screen", "quote the error text") answers every
+#: time, and still extracts exactly what the demo is about:
+#:
+#:     frame_0020 -> "Card declined by issuer … Attempt 1 was refused with
+#:                    do_not_honor. Check the card number or retry."
 QUESTION = (
-    "What went wrong on this screen, and which step of the checkout does it "
-    "belong to? Answer in one sentence."
+    "What is on this screen? If there is an error or warning message, quote it "
+    "exactly as written. Answer in at most 60 words."
 )
 
 #: The filter's threshold and the region size below which a diff is treated as
@@ -156,6 +168,13 @@ def run_config(name: str, frames: list[Frame], *, primary, filter_backend, crop:
     payload = report.to_dict()
     payload["wall_seconds"] = round(wall, 3)
     payload["name"] = name
+    # A call that came back empty is not a call that answered. Counting the
+    # difference keeps "29 frames reached the model" from quietly reading as "the
+    # model answered 29 times" — which is exactly what a thinking model that
+    # spends its budget reasoning will do on a hard question.
+    payload["answered_nonempty"] = sum(
+        1 for a in report.answers if not a.skipped and a.text.strip()
+    )
     # The page prints the report's own words rather than a re-typed copy of
     # them, so the summary on the page cannot drift from the summary the library
     # produces.
@@ -198,6 +217,42 @@ def crop_example(frames: list[Frame], answers: list[dict]) -> dict | None:
             "action": frame.action,
         }
     return None
+
+
+#: Fractions of a full keyframe to measure the token curve at.
+PROBE_FRACTIONS = (1.0, 0.5, 0.25, 0.1, 0.02)
+
+
+def token_curve(backend, frame: Frame) -> list[dict]:
+    """What the model actually charged, as the image gets smaller.
+
+    ``tokens_after`` is derived from pixel area, which quietly assumes the cost
+    of an image scales with how many pixels it has. That holds for a per-pixel
+    price list and fails for a vision encoder that pads every image up to a
+    fixed budget, so the two are measured against each other here instead of
+    being argued about. The estimate is not removed when it turns out to be
+    wrong — an estimator that can be checked and found wrong is worth more than
+    one nobody checked.
+    """
+    from agent_visual_harness import crop_image, estimate_tokens, image_size
+
+    width, height = image_size(frame.image)
+    points: list[dict] = []
+    for fraction in PROBE_FRACTIONS:
+        box = (0, 0, max(1, int(width * fraction)), max(1, int(height * fraction)))
+        image = frame.image if fraction >= 1.0 else crop_image(frame.image, box)
+        backend.ask(image, QUESTION)
+        points.append(
+            {
+                "fraction": fraction,
+                "width": box[2],
+                "height": box[3],
+                "megapixels": round(box[2] * box[3] / 1e6, 4),
+                "estimated": estimate_tokens(image),
+                "counted": backend.last_prompt_tokens,
+            }
+        )
+    return points
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -393,6 +448,18 @@ def main(argv: list[str] | None = None) -> int:
             ),
         }
 
+    # The size/token relationship, measured rather than assumed. A run that
+    # cannot probe it still produced valid numbers, so a failure here is
+    # recorded and reported instead of taking the whole benchmark down with it.
+    curve: list[dict] = []
+    curve_error: str | None = None
+    if measured and frames:
+        try:
+            curve = token_curve(OllamaBackend(args.model, args.ollama), frames[0])
+        except Exception as error:  # noqa: BLE001 - see above
+            curve_error = f"{type(error).__name__}: {error}"
+            print(f"token curve unavailable ({curve_error})", flush=True)
+
     results = {
         "meta": {
             "measured": measured,
@@ -417,6 +484,8 @@ def main(argv: list[str] | None = None) -> int:
         },
         "workflows": workflows,
         "headline": headline,
+        "token_curve": curve,
+        "token_curve_error": curve_error,
         "per_frame": triaged_answers,
         "notes": notes,
     }
@@ -433,6 +502,11 @@ def main(argv: list[str] | None = None) -> int:
     print(f"{'triaged':<22}{triaged['tokens_after']:,} tokens  "
           f"{triaged['model_calls']} model calls  "
           f"({triaged['calls_avoided']} never sent)")
+    if measured:
+        print(f"{'non-empty answers':<22}{whole['answered_nonempty']} of "
+              f"{whole['model_calls']} (whole), "
+              f"{workflows['cropped']['answered_nonempty']} of "
+              f"{workflows['cropped']['model_calls']} (cropped)")
     if headline.get("triaged_vs_whole_pct") is not None:
         print(f"{'triaged vs whole':<22}{headline['triaged_vs_whole_pct']}% of the tokens")
     if headline.get("counted_tokens_whole") is not None:
@@ -443,6 +517,17 @@ def main(argv: list[str] | None = None) -> int:
         print(f"{'triaged':<22}{headline['counted_tokens_triaged']:,} tokens")
         print(f"{'triaged vs whole':<22}"
               f"{headline['counted_triaged_vs_whole_pct']}% of the tokens")
+    if curve:
+        print()
+        print("what the model charges as the image shrinks:")
+        print(f"  {'image':<14}{'megapixels':>11}{'estimated':>11}{'counted':>10}")
+        for point in curve:
+            counted = point["counted"]
+            shown = f"{counted:,}" if counted is not None else "n/a"
+            print(
+                f"  {point['width']}x{point['height']:<9}{point['megapixels']:>11.3f}"
+                f"{point['estimated']:>11,}{shown:>10}"
+            )
     print(f"{'measured':<22}{measured}")
     if not measured:
         print(f"\nNOT A MEASUREMENT: {why}")

@@ -260,6 +260,18 @@ def check_agent(html: str, problems: list[str]) -> list[str]:
             "the page claims tokens were counted by a model, but no counted token "
             "total exists in agent.json"
         )
+        ratio = agent["headline"].get("counted_triaged_vs_whole_pct")
+        if ratio is not None and ratio >= 95.0 and "did not make this model cheaper" not in html:
+            problems.append(
+                f"the model was charged {ratio}% of the tokens after cropping, so the "
+                "crop saved almost nothing — but the page does not say that anywhere "
+                "near the table that implies it did"
+            )
+        if agent.get("token_curve") and "megapixels" not in html:
+            problems.append(
+                "the run measured what the model charges as the image shrinks, but the "
+                "page does not show the curve, so the finding cannot be checked"
+            )
 
     for name, label in (("whole", "every keyframe whole"),
                         ("cropped", "cropped"),

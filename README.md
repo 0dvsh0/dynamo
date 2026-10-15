@@ -123,29 +123,59 @@ Three levers, none of which is model quality:
    the ones below your threshold are dropped — with the probability that dropped
    them kept on the answer rather than discarded.
 3. **The generative model.** Only now is a VLM asked, and it is asked about a
-   crop rather than a whole screen whenever the diff can point at one.
+   crop rather than a whole screen whenever the diff can point at one — which
+   cuts the bytes on the wire, though (measured below) not the tokens on this
+   stack.
 
-Measured against the same 29 keyframes the reducer produced
-(`demo/run_agent_bench.py` → `demo/data/agent.json`):
+Measured over the same 29 keyframes the reducer produced, with `qwen3-vl:4b` on
+Ollama answering and Laya deciding as the filter (`demo/run_agent_bench.py` →
+`demo/data/agent.json`). Two token columns, because they disagree:
 
-| How the frames reach the model | frames sent | cropped first | visual tokens | of sending all |
-| --- | --- | --- | --- | --- |
-| A · every keyframe, whole | 29 | 0 | 22,707 | 100% |
-| B · cropped to what the diff says moved | 29 | 20 | **11,008** | **48.5%** |
-| C · triaged: skip unchanged → filter → crop | 29 | 20 | **11,008** | **48.5%** |
+| How the frames reach the model | frames sent | cropped | estimated tokens | est. vs A | **counted by the model** | **counted vs A** |
+| --- | --- | --- | --- | --- | --- | --- |
+| A · every keyframe, whole | 29 | 0 | 22,707 | 100% | 32,132 | 100% |
+| B · cropped to what the diff says moved | 29 | 20 | 11,008 | 48.5% | 32,014 | **99.6%** |
+| C · triaged: skip → filter → crop | **24** | 20 | 8,638 | 38.0% | 26,526 | **82.6%** |
 
-And on one frame: the whole keyframe is 1280×800 → **783 tokens**. The region the
-diff reported for that same frame is 578×296 → **131 tokens**, or **6.0× less**.
-The model is not asked to ignore the rest of the screen; it is never shown it.
+`estimated` is a per-megapixel price applied to the pixels sent: cheap, identical
+on every machine, and available before a model exists. `counted` is
+`prompt_eval_count` — what Ollama says it actually fed the model. Laya dropped 5
+of the 29 frames (p = 0.07, 0.03, 0.06, 0.03, 0.10) and all 29 frames came back
+answered.
 
-**Being honest about the third column: rows A and B are measurements, row C is
-not.** On this keyframe set the skip and filter steps removed *nothing* — because
-the reducer had already dropped the redundant frames, and the frames that remain
-are action anchors, which are never skipped on purpose. That saving bites on a raw
-frame stream, not on an already-reduced one. A stub filter also passed every
-frame, so row C's `frames sent` shows what the pipeline *does*, not what a model
-*would* decide. The bench **refuses to write the file** without `--stub` unless a
-real model answered, and the page states which of the two it is.
+**The crop does not save tokens, and the measurement is the only reason that is
+now said out loud.** B halves the estimate and moves the real bill by 0.4%. The
+benchmark measures the shape of it, sending one frame at five sizes:
+
+| image sent | megapixels | estimated | counted |
+| --- | --- | --- | --- |
+| 1280×800 | 1.024 | 783 | 1,108 |
+| 640×400 | 0.256 | 196 | 1,108 |
+| 320×200 | 0.064 | 49 | 1,108 |
+| 128×80 | 0.010 | 8 | 1,108 |
+| 25×16 | 0.000 | 0 | 1,122 |
+
+A 25×16 crop — 400 pixels — costs *more* than a whole screen, because this server
+resizes every image up to a fixed budget before the vision encoder sees it. The
+estimator models a per-pixel price list, which is what per-pixel billing charges;
+it is the wrong model for this stack, and no amount of arithmetic would have said
+so.
+
+So on **this** stack the honest ranking of the three levers is: **not sending a
+frame pays — 82.6% counted, real money — and cropping one does not.** The crop
+still cuts the bytes on the wire and still points the model at what changed; it
+is simply not a token saving here, and the harness no longer implies that it is.
+
+**Qwen3-VL thinks first, which changed the benchmark's question.** The original
+phrasing — *"what went wrong on this screen, and which step of the checkout does
+it belong to?"* — returned 3,849 characters of reasoning and **zero** answer
+tokens on every frame, stopped on length. Ollama ignores `think: false` for this
+checkpoint, so there was no switch to flip: a bigger budget only produced 7,861
+characters of thinking. Two *descriptive* questions ("what is on this screen",
+"quote the error text") answer every time and still read the demo's error off the
+screen — frame_0020 comes back *"Card declined by issuer … Attempt 1 was refused
+with do_not_honor."* The bench records non-empty answers beside calls made, so a
+model that thinks instead of replying cannot be counted as one that answered.
 
 ```python
 from agent_visual_harness import LayaBackend, OllamaBackend, Triage

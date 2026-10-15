@@ -288,6 +288,15 @@ class OllamaBackend(Backend):
     a server holds the model warm between frames — so a latency number measures
     the model rather than the load — and ``ollama pull`` is the entire install
     step, which is what a reader will actually follow.
+
+    One thing worth knowing before blaming this class for an empty answer.
+    Qwen3-VL is a *thinking* model: it reasons first and answers afterwards, and
+    on Ollama 0.40 the ``think`` flag is ignored for this checkpoint, so neither
+    ``think: false`` nor a ``/no_think`` marker changes anything. When the
+    reasoning runs past ``max_tokens``, generation stops on length before a
+    single answer token is emitted and the reply is genuinely empty. That is
+    reported as an empty answer rather than papered over, because a frame the
+    model declined to finish answering is a fact about the run.
     """
 
     def __init__(
@@ -297,7 +306,7 @@ class OllamaBackend(Backend):
         *,
         timeout: float = 600.0,
         temperature: float = 0.0,
-        max_tokens: int = 256,
+        max_tokens: int = 512,
     ) -> None:
         self.model = model
         self.endpoint = endpoint.rstrip("/")

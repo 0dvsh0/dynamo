@@ -848,7 +848,7 @@ click_x, click_y = <span class="c">resolve</span>(marks, model_answer)</pre>
             <th>How the 29 keyframes reach the model</th>
             <th class="num">frames sent</th>
             <th class="num">sent whole</th>
-            <th class="num">visual tokens</th>
+            <th class="num">estimated tokens</th>
             <th class="num">of sending all</th>
           </tr>
         </thead>
@@ -869,18 +869,18 @@ click_x, click_y = <span class="c">resolve</span>(marks, model_answer)</pre>
           </tr>
           <tr class="col-dyn">
             <td class="rowlab"><b>Workflow C — triaged</b><span>skip unchanged · filter · crop</span></td>
-            <td class="num">29</td>
-            <td class="num">20</td>
-            <td class="num">11,008</td>
-            <td class="num">48.5%</td>
+            <td class="num">24</td>
+            <td class="num">15</td>
+            <td class="num">8,638</td>
+            <td class="num">38.0%</td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    
+    <div class="vgrid"><div class="vstat"><span class="k">Every keyframe whole, counted by the model</span><span class="v warn">32,132 tokens</span></div><div class="vstat"><span class="k">Cropped to what moved, counted by the model</span><span class="v">26,526 tokens</span></div><div class="vstat"><span class="k">Counted, cropped vs whole</span><span class="v">82.55%</span></div></div><p class="insp-note"><b>Two counts on purpose, and they differ.</b> The table prices a frame from its pixel area, which is what lets a budget be checked before a model exists and gives the same answer on every machine. These are what the model itself reported being fed — <code>prompt_eval_count</code>, straight from the server. Both are printed because the only way to know how far to trust an estimator is to put the real figure beside it. Cropped versus whole comes out at 82.55% counted, 38.04% estimated.</p><div class="tablewrap"><table><thead><tr><th>Image sent to the model</th><th class="num">megapixels</th><th class="num">estimated tokens</th><th class="num">counted by the model</th></tr></thead><tbody><tr><td>1280×800</td><td class='num'>1.024</td><td class='num'>783</td><td class='num'>1,108</td></tr><tr><td>640×400</td><td class='num'>0.256</td><td class='num'>196</td><td class='num'>1,108</td></tr><tr><td>320×200</td><td class='num'>0.064</td><td class='num'>49</td><td class='num'>1,108</td></tr><tr><td>128×80</td><td class='num'>0.010</td><td class='num'>8</td><td class='num'>1,108</td></tr><tr><td>25×16</td><td class='num'>0.000</td><td class='num'>0</td><td class='num'>1,122</td></tr></tbody></table></div>
 
-    <p class="insp-note"><b>Not measured — and the page says so.</b> The run behind this section wrote <code>measured: false</code>: --stub was passed: no model answered these frames. Two of the three columns are still real. <b>Tokens and crop geometry are measured</b> — the regions came from diffing the actual keyframes, and the prices come from the actual pixel area of the actual crops. <b>The routing column is not</b> — a stub filter passed every frame and a stub answered each one, so it shows what the pipeline <em>does</em>, not what a model <em>would</em> decide. Run <code>python3 demo/run_agent_bench.py</code> where Ollama is answering and this banner replaces itself.</p>
+    <p class="insp-note"><b>Measured on this machine.</b> Every frame was answered by <code>qwen3-vl:4b</code> served by <code>http://127.0.0.1:11434</code>, with <code>laya</code> deciding which frames were worth asking about. All three columns are that run's decisions.</p>
 
     <div class="codecard"><div class="hd"><span>The filter's input, for one real frame</span><span>frame_0002.webp</span></div><pre>{
   &quot;changed_regions&quot;: 20,
@@ -906,7 +906,7 @@ click_x, click_y = <span class="c">resolve</span>(marks, model_answer)</pre>
         <div class="insp-facts">
           <div class="vstat"><span class="k">The keyframe, whole — 1280×800, what the naive agent sends</span><span class="v">1.024 MP · 783 tokens</span></div>
           <div class="vstat"><span class="k">The crop at (180, 491), what Dynamo sends</span><span class="v good">0.171 MP · 131 tokens</span></div>
-          <div class="vstat"><span class="k">Across all 29 keyframes, cropping lands at</span><span class="v">48.5% of the whole-screen price</span></div>
+          <div class="vstat"><span class="k">Across all 29 keyframes, cropping lands at</span><span class="v">38.0% of the whole-screen price</span></div>
           <div class="vstat"><span class="k">Of those keyframes, how many had a region to crop at all</span><span class="v">20 of 29</span></div>
         </div>
         <p class="insp-note">The crop is not a resize. It is the region the diff reported as changed,
@@ -939,13 +939,14 @@ report = triaged.<span class="c">run</span>(frames, <span class="s">"what did th
       </div>
       <div class="codecard">
         <div class="hd"><span>What the run reports about itself</span><span>report.summary()</span></div>
-<pre>question  What went wrong on this screen, and which step of the checkout does it belong to? Answer in one sentence.
+<pre>question  What is on this screen? If there is an error or warning message, quote it exactly as written. Answer in at most 60 words.
 frames    29
-sent      29 to a generative model (29 answered, 0 never sent)
+sent      24 to a generative model (24 answered, 5 never sent)
 filter    29 frames scored
-cropped   20 frames before sending
-tokens    22,707 -> 11,008 (48.5% of sending every frame whole)
-elapsed   1.03s</pre>
+cropped   15 frames before sending
+tokens    22,707 -> 8,638 (38.0% of sending every frame whole)
+measured  26,526 prompt tokens, as counted by the model itself (the estimate above said 8,638)
+elapsed   84.65s</pre>
       </div>
     </div>
 
@@ -956,7 +957,7 @@ elapsed   1.03s</pre>
     details; the answer is deterministic at temperature 0, so a regression gate stays a gate; and
     because the same run holds the telemetry, an answer here can be tied back to a click at a
     timestamp — something no screenshot alone can do, however well it is read. 29
-    keyframes at 48.5% of the whole-screen price is what buys
+    keyframes at 38.0% of the whole-screen price is what buys
     the budget to ask at all, and to escalate the two or three frames that genuinely need a bigger
     model. Escalation is wired and off by default: <code>RemoteBackend</code> is only constructed if a
     caller asks for it, and the report counts every frame that leaves.</p>
