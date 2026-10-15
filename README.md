@@ -388,7 +388,7 @@ The honest reading, which the page states plainly:
 
 - **Screenshots and Dynamo cost about the same in tokens**, because both sample on
   actions rather than wall-clock time. Dynamo's win there is not the token count.
-- **Time-driven sampling (DIY) is the real token disaster** — 1.8× the tokens and 21 of
+- **Time-driven sampling (DIY) is the real token disaster** — 2.1× the tokens and 21 of
   50 consecutive frame pairs are pixel-identical.
 - **Dynamo's win over screenshots is everything screenshots cannot do**: the video, the
   GIF, the click overlays, the timing manifest, a crash-safe recording, and a frame

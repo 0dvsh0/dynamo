@@ -352,6 +352,74 @@ def data_fingerprint() -> str:
     return digest.hexdigest()[:16]
 
 
+README = HERE.parent / "README.md"
+
+
+def check_readme(problems: list[str]) -> None:
+    """The README quotes the same measurements as the page. Check it too.
+
+    A checker that only reads the page is half a check: the README is the other
+    published surface, it is hand-written, and a stale or mistyped figure there
+    is the one a reader is most likely to quote. This found a README claiming
+    "1.8x the tokens" while the measurement said 2.12x — the page was right the
+    whole time, because the page is generated.
+    """
+    if not README.exists():
+        problems.append("README.md is missing, so its numbers cannot be checked")
+        return
+    text = README.read_text(encoding="utf-8")
+    try:
+        data = json.loads(RESULTS.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return
+
+    columns = ["screenshots", "diy", "dynamo"]
+
+    def cells(label):
+        """The numeric cells of one markdown table row, in workflow order."""
+        for line in text.splitlines():
+            if not line.startswith("|"):
+                continue
+            parts = [c.strip() for c in line.strip().strip("|").split("|")]
+            if parts and parts[0].lower() == label.lower():
+                return [p.replace("**", "").strip() for p in parts[1:1 + len(columns)]]
+        return None
+
+    def expect(label, wanted, note=""):
+        found = cells(label)
+        if found is None:
+            problems.append(f"README has no '{label}' row, so {note} cannot be checked")
+            return
+        for key, got, want in zip(columns, found, wanted):
+            if want is None:
+                continue
+            if got != want:
+                problems.append(
+                    f"README says '{label}' for {key} is {got}, the measurement says "
+                    f"{want}"
+                )
+
+    expect("images to the model", [str(data[k].get("images")) for k in columns])
+    expect("visual tokens", [f"{data[k].get('tokens', 0):,}" for k in columns])
+    expect("bit-identical repeats",
+           [str((data[k].get("redundancy") or {}).get("duplicates")) for k in columns])
+
+    deltas = [(data[k].get("redundancy") or {}).get("mean_delta") for k in columns]
+    expect("mean frame-to-frame Δ",
+           [None if d is None else f"{d:.2f}" for d in deltas])
+
+    # And the one derived figure the prose leans on.
+    shots, diy = data["screenshots"].get("tokens", 0), data["diy"].get("tokens", 0)
+    if shots:
+        want = f"{diy / shots:.1f}"
+        found = re.search(r"(\d+(?:\.\d+)?)\s*[×x]\s+the tokens", text)
+        if found and found.group(1) != want:
+            problems.append(
+                f"README claims {found.group(1)}x the tokens for DIY against "
+                f"screenshots, the measurement says {want}x"
+            )
+
+
 def main() -> int:
     html = PAGE.read_text(encoding="utf-8")
     data = json.loads(RESULTS.read_text(encoding="utf-8"))
@@ -479,6 +547,7 @@ def main() -> int:
         print(note)
     for note in check_agent(html, problems):
         print(note)
+    check_readme(problems)
 
     print()
     if problems:
