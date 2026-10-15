@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Northwind Outfitters — Payment Gateway Console</title>
+<link rel="stylesheet" href="/static/app.css">
+<link rel="stylesheet" href="/static/console.css">
+</head>
+<body class="console-body">
+<header class="site">
+  <div class="bar">
+    <a class="logo" href="/">
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+        <path d="M3 17 9 4l3 6 3-6 6 13z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+      </svg>
+      <span>Northwind<em>Outfitters</em></span>
+    </a>
+    <nav class="nav">
+      <a href="/">Checkout</a>
+      <a href="/cart">Cart <span class="pill-count" id="cart-count">3</span></a>
+      <a href="/orders">Orders</a>
+      <a href="/account">Account</a>
+    </nav>
+    <div class="account">signed in as <strong>demo@northwind.test</strong></div>
+  </div>
+</header>
+
+<main class="console">
+  <div class="console-head">
+    <h1>Payment gateway — transaction console</h1>
+    <p class="muted">
+      Merchant <strong>NW-OUTFITTERS-4417</strong> &middot; environment
+      <strong>sandbox</strong> &middot; build <strong>2026.10.14-a91f2c</strong>
+    </p>
+  </div>
+
+  <div class="console-actions">
+    <button id="probe" type="button">read innerHTML</button>
+    <button id="retry" type="button" class="btn primary">Retry transaction</button>
+    <button id="escalate" type="button" class="btn">Escalate to payments-oncall</button>
+    <span class="probe-note">
+      Verify: <span id="probe-out" class="probe-out"></span>
+    </span>
+  </div>
+
+  <!--
+    The log is painted into a <canvas> on purpose.
+
+    Real payment consoles, VNC sessions and Remote Desktop windows all paint
+    their diagnostics to a surface that hands nothing back to the DOM: there is
+    no textContent, no input value, no accessibility node. A scraper reading
+    this page finds an empty <div>. The only ways out are a vision model or OCR,
+    and this page is what the OCR benchmark runs against.
+  -->
+  <canvas id="log" width="1360" height="470" aria-label="Gateway transaction log"
+          role="img"></canvas>
+
+  <p class="muted console-note">
+    Rendered to <code>&lt;canvas&gt;</code> — the DOM contains no text.
+    <code>document.querySelector('#log').textContent</code> is the empty string.
+  </p>
+</main>
+
+<footer class="site-foot">
+  <span>Northwind Outfitters · demo store</span>
+  <span id="build">build 2026.10.14-a91f2c</span>
+</footer>
+
+<script src="/static/console.js"></script>
+</body>
+</html>

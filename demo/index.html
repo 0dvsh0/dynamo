@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dynamo — one real agent checkout, three workflows, measured</title>
+<meta name="description" content="A real headless-Chromium agent drives a real checkout flow — including a declined card — through three capture workflows. Every artifact and every number is measured.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+<style>
+:root{
+  --bg:#0A0B0D; --panel:#111317; --panel-2:#15181D; --line:#22262E;
+  --volt:#C8FF3D; --cyan:#4FD8FF; --red:#FF5F5F; --amber:#FFB300; --green:#43D17A; --violet:#7A5CFF;
+  --text:#E8E8E8; --dim:#9AA4B2; --faint:#5C6673;
+  --mono:'Geist Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:'Geist',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);
+  -webkit-font-smoothing:antialiased;line-height:1.5}
+.bg-grid{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.5;
+  background-image:linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);
+  background-size:56px 56px;
+  -webkit-mask-image:radial-gradient(ellipse 90% 55% at 50% 0%,#000 30%,transparent 78%);
+  mask-image:radial-gradient(ellipse 90% 55% at 50% 0%,#000 30%,transparent 78%)}
+.bg-glow{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(760px 380px at 50% -8%,rgba(200,255,61,.10),transparent 70%),
+             radial-gradient(620px 320px at 88% 8%,rgba(79,216,255,.07),transparent 70%)}
+.wrap{position:relative;z-index:1}
+.container{width:min(1220px,calc(100% - 48px));margin-inline:auto}
+
+header{padding:54px 0 34px;text-align:center}
+.brand{display:inline-flex;align-items:center;gap:10px;font-weight:700;letter-spacing:-.02em;font-size:17px;color:var(--text);text-decoration:none}
+.brand-mark{color:var(--volt);display:inline-flex}
+h1{font-size:clamp(32px,5.2vw,58px);line-height:1.05;letter-spacing:-.035em;margin:24px 0 0;font-weight:600}
+h1 em{font-style:normal;color:var(--volt)}
+.sub{max-width:800px;margin:18px auto 0;color:var(--dim);font-size:16.5px;font-weight:300}
+.pill{display:inline-flex;align-items:center;gap:9px;border:1px solid var(--line);border-radius:999px;
+  padding:6px 15px;font-family:var(--mono);font-size:12px;color:var(--dim);background:rgba(255,255,255,.02);margin-top:18px}
+.pill .dot{width:7px;height:7px;border-radius:50%;background:var(--volt);box-shadow:0 0 10px var(--volt)}
+
+.scene{margin-top:30px;border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:22px 24px;text-align:left}
+.scene-label{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin-bottom:16px}
+.flow{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:10px 24px}
+.flow li{display:flex;align-items:center;gap:9px;font-size:13.5px;color:var(--dim);font-weight:300}
+.flow .n{width:21px;height:21px;border-radius:50%;display:grid;place-items:center;font-family:var(--mono);
+  font-size:11px;font-weight:600;background:var(--panel-2);color:var(--faint);border:1px solid var(--line);flex:0 0 auto}
+.flow .n.bad{background:rgba(255,95,95,.13);color:var(--red);border-color:rgba(255,95,95,.4)}
+.flow .n.good{background:rgba(67,209,122,.13);color:var(--green);border-color:rgba(67,209,122,.4)}
+.scene-note{margin:18px 0 0;padding-top:16px;border-top:1px solid var(--line);color:var(--dim);font-size:13.5px;font-weight:300}
+.scene-note em{color:var(--volt);font-style:normal}
+
+section{padding:62px 0;border-top:1px solid var(--line)}
+.eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--volt);margin:0 0 12px}
+h2{font-size:clamp(24px,3vw,34px);letter-spacing:-.025em;margin:0 0 12px;font-weight:600;line-height:1.16}
+h2 em{font-style:normal;color:var(--volt)}
+.lede{color:var(--dim);font-size:15.5px;max-width:830px;margin:0 0 28px;font-weight:300}
+.lede b{color:var(--text);font-weight:500}
+
+/* ---------- verdict ---------- */
+.verdicts{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.vcard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px}
+.vcard.win{border-color:rgba(200,255,61,.42);background:linear-gradient(180deg,rgba(200,255,61,.07),transparent 42%)}
+.vcard .tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+.vcard.win .tag{color:var(--volt)}
+.vcard h3{margin:9px 0 3px;font-size:18px;letter-spacing:-.015em}
+.vcard .role{font-family:var(--mono);font-size:11.5px;color:var(--faint);margin-bottom:15px}
+.vstat{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:7px 0;border-top:1px solid var(--line)}
+.vstat .k{font-size:12.5px;color:var(--dim)}
+.vstat .v{font-family:var(--mono);font-size:13.5px;font-weight:500}
+.good{color:var(--green)} .bad{color:var(--red)} .warn{color:var(--amber)} .na{color:var(--faint)}
+
+/* ---------- stills gallery ---------- */
+.stills{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+.still{margin:0;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.still img{display:block;width:100%;aspect-ratio:1440/900;object-fit:cover;object-position:top left;background:#000}
+.still figcaption{padding:11px 14px;display:flex;justify-content:space-between;gap:12px;align-items:baseline;
+  border-top:1px solid var(--line);font-size:13px}
+.still .t{color:var(--text)}
+.still .ts{font-family:var(--mono);font-size:11px;color:var(--faint);white-space:nowrap}
+
+/* ---------- filmstrips ---------- */
+.strip-block{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:16px}
+.strip-head{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.strip-head h4{margin:0;font-size:15.5px;letter-spacing:-.01em}
+.strip-head .meta{font-family:var(--mono);font-size:11.5px;color:var(--faint)}
+.strip{display:flex;gap:5px;overflow-x:auto;padding:14px 2px 6px}
+.fr{flex:0 0 auto;width:96px;border-radius:6px;overflow:hidden;border:1.5px solid var(--line);position:relative;background:#000}
+.fr img{display:block;width:100%;aspect-ratio:1440/900;object-fit:cover;object-position:top left}
+.fr .cap{font-family:var(--mono);font-size:9.5px;color:var(--faint);text-align:center;padding:3px 0;background:var(--panel-2)}
+.fr.dup{border-color:rgba(255,95,95,.5);opacity:.4}
+.fr.dup::after{content:'dup';position:absolute;top:4px;left:4px;background:var(--red);color:#000;
+  font-family:var(--mono);font-size:9px;font-weight:600;padding:1px 5px;border-radius:4px}
+.fr.keep{border-color:rgba(200,255,61,.5)}
+.fr.keep::after{content:'keep';position:absolute;top:4px;left:4px;background:var(--volt);color:#000;
+  font-family:var(--mono);font-size:9px;font-weight:600;padding:1px 5px;border-radius:4px;opacity:.9}
+.spark{height:62px;width:100%;margin-top:10px;display:block}
+.legend{display:flex;gap:18px;flex-wrap:wrap;font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:10px}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.note{color:var(--dim);font-size:13.5px;font-weight:300;margin:8px 0 0}
+.note b{color:var(--text);font-weight:500}
+.note .r{color:var(--red);font-weight:500}
+.note .g{color:var(--green);font-weight:500}
+
+/* ---------- media ---------- */
+.media-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.media{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.media video{display:block;width:100%;aspect-ratio:1440/900;object-fit:cover;background:#000}
+.media .cap{padding:13px 16px;border-top:1px solid var(--line)}
+.media .cap .t{font-size:14px;font-weight:500;display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.media .cap .t b{font-family:var(--mono);font-size:12.5px;font-weight:500}
+.media .cap .d{font-family:var(--mono);font-size:11.5px;color:var(--faint);margin-top:5px}
+
+/* ---------- crash ---------- */
+.crash{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.cbox{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px}
+.cbox.bad{border-color:rgba(255,95,95,.4)} .cbox.good{border-color:rgba(67,209,122,.4)}
+.cbox .hd{display:flex;align-items:center;gap:9px;font-size:14.5px;font-weight:500;margin-bottom:12px}
+pre{background:#0D0F12;border:1px solid var(--line);border-radius:9px;padding:13px 15px;overflow-x:auto;
+  font-family:var(--mono);font-size:12px;line-height:1.65;margin:0;color:var(--dim)}
+pre .k{color:var(--violet)} pre .s{color:var(--cyan)} pre .n{color:var(--volt)} pre .c{color:var(--faint)}
+pre .g{color:var(--green)} pre .r{color:var(--red)}
+.cbox .foot{font-family:var(--mono);font-size:11.5px;margin-top:12px}
+.cbox .foot.ok{color:var(--green)} .cbox .foot.no{color:var(--red)}
+
+/* ---------- table ---------- */
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;min-width:760px;font-size:14px}
+th,td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--line)}
+thead th{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);font-weight:500}
+tbody tr:last-child td{border-bottom:0}
+td.num,th.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.col-dyn{background:rgba(200,255,61,.055)}
+thead .col-dyn{color:var(--volt)}
+td.rowlab{color:var(--dim);font-weight:300}
+td.rowlab b{color:var(--text);font-weight:500;display:block}
+td.rowlab span{font-family:var(--mono);font-size:11px;color:var(--faint)}
+
+/* ---------- code ---------- */
+.code{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.codecard{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.codecard .hd{padding:13px 16px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:11.5px;
+  color:var(--faint);display:flex;justify-content:space-between;gap:10px}
+.codecard.bad .hd{color:var(--red)} .codecard.good .hd{color:var(--green)}
+.codecard pre{border:0;border-radius:0;background:transparent}
+
+/* ---------- capability grid ---------- */
+.caps{display:grid;grid-template-columns:repeat(auto-fit,minmax(268px,1fr));gap:14px}
+.cap{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px}
+.cap .ic{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;margin-bottom:13px;font-size:14px;
+  background:rgba(200,255,61,.12);color:var(--volt)}
+.cap h4{margin:0 0 6px;font-size:15px;letter-spacing:-.01em}
+.cap p{margin:0;color:var(--dim);font-size:13.5px;font-weight:300}
+.cap .metric{margin-top:12px;padding-top:11px;border-top:1px solid var(--line);font-family:var(--mono);font-size:11.5px;color:var(--volt)}
+.cap.miss .ic{background:rgba(255,95,95,.12);color:var(--red)}
+.cap.miss .metric{color:var(--red)}
+
+/* ---------- inspection capabilities ---------- */
+.insp{border:1px solid var(--line);border-radius:16px;background:var(--panel);overflow:hidden;margin-bottom:18px}
+.insp-hd{display:flex;justify-content:space-between;align-items:baseline;gap:18px;flex-wrap:wrap;
+  padding:16px 20px;border-bottom:1px solid var(--line)}
+.insp-hd h3{margin:0;font-size:16px;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+.insp-hd h3 .tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--volt);background:rgba(200,255,61,.12);padding:3px 8px;border-radius:5px}
+.insp-hd .sub{font-family:var(--mono);font-size:11.5px;color:var(--faint)}
+.insp-bd{padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+.insp-bd.one{grid-template-columns:1fr}
+.insp-bd .shot{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#000}
+.insp-bd .shot img{display:block;width:100%}
+.insp-bd .shot.dark img{background:#000}
+.insp-facts{display:grid;gap:0}
+.insp-facts .vstat:first-child{border-top:0}
+.insp-verdict{margin-top:14px;padding:12px 14px;border-radius:10px;border:1px solid var(--line);
+  background:var(--bg);font-family:var(--mono);font-size:12px;color:var(--dim);word-break:break-word}
+.insp-verdict b{color:var(--text);font-weight:500}
+.insp-verdict .bad{color:var(--red)} .insp-verdict .good{color:var(--green)}
+.insp-note{margin:16px 0 0;font-size:13.5px;color:var(--dim);font-weight:300}
+.insp-note b{color:var(--text);font-weight:500}
+.insp-note code{font-family:var(--mono);font-size:12px;background:var(--panel);
+  border:1px solid var(--line);border-radius:5px;padding:1px 5px;color:var(--cyan)}
+.transcript{font-family:var(--mono);font-size:11.5px;line-height:1.75;margin:0;
+  background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:13px 15px;
+  overflow-x:auto;white-space:pre;color:var(--dim)}
+.transcript .was{color:var(--green)}
+.transcript .now{color:var(--red)}
+.transcript .lbl{color:var(--faint)}
+.hidpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.hidpi-grid .cell{border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.hidpi-grid .cell img{display:block;width:100%;background:#000}
+.hidpi-grid .cap2{padding:10px 13px;font-family:var(--mono);font-size:11.5px;color:var(--dim)}
+.hidpi-grid .cap2 b{display:block;margin-top:4px;font-size:12.5px}
+.hidpi-grid .miss .cap2 b{color:var(--red)}
+.hidpi-grid .hit .cap2 b{color:var(--green)}
+.legend{font-family:var(--mono);font-size:11.5px;color:var(--dim);line-height:1.85;
+  max-height:340px;overflow:auto;background:var(--bg);border:1px solid var(--line);
+  border-radius:10px;padding:13px 15px;white-space:pre}
+
+footer{padding:46px 0 60px;border-top:1px solid var(--line);color:var(--faint);font-size:12.5px;
+  display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
+footer .mono{font-family:var(--mono)}
+
+@media(max-width:940px){
+  .verdicts,.media-grid,.crash,.code{grid-template-columns:1fr}
+  .insp-bd,.hidpi-grid{grid-template-columns:1fr}
+  .container{width:calc(100% - 32px)}
+  section{padding:46px 0}
+}
+</style>
+</head>
+<body>
+<div class="bg-grid"></div><div class="bg-glow"></div>
+<div class="wrap">
+
+<header class="container">
+  <a class="brand" href="#top">
+    <span class="brand-mark"><svg viewBox="0 0 32 32" width="24" height="24"><rect x="1" y="1" width="30" height="30" rx="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 9h7a7 7 0 0 1 0 14H9z" fill="currentColor"/><circle cx="23" cy="9" r="2.5" fill="#0A0B0D"/></svg></span>
+    Dynamo
+  </a>
+  <h1 id="top">One agent, one real checkout.<br><em>Three workflows. Everything below was measured.</em></h1>
+  <p class="sub">A headless-agent script drives a <b>real Chromium</b> through a <b>real HTTP
+  storefront</b> — filling in a form, tripping a validator, getting declined twice, retrying,
+  and completing the order. The whole thing is recorded three different ways. Every image,
+  video, frame count and byte total on this page is a real artifact from a real run.</p>
+  <div class="pill"><span class="dot"></span>1440×900 · 20 fps · Chromium (Playwright, headed) · 52.1 s · 1042 captured frames</div>
+
+  <div class="scene">
+    <div class="scene-label">the workload</div>
+    <ol class="flow">
+      <li><span class="n">1</span>type shipping details</li>
+      <li><span class="n bad">2</span>validator rejects the postal code</li>
+      <li><span class="n">3</span>fix it, continue to payment</li>
+      <li><span class="n">4</span>type card details</li>
+      <li><span class="n bad">5</span>issuer declines attempt 1</li>
+      <li><span class="n bad">6</span>issuer declines attempt 2</li>
+      <li><span class="n good">7</span>captured on attempt 3</li>
+      <li><span class="n">8</span>place order → confirmed</li>
+    </ol>
+    <p class="scene-note">Two of those steps are failures the agent has to see in order to recover
+    from — and the agent <em>cannot</em> see them, because it only reads the DOM. That is the entire
+    argument for recording the screen.</p>
+  </div>
+</header>
+
+<!-- ================= WHAT THE AGENT SAW ================= -->
+<section>
+  <div class="container">
+    <p class="eyebrow">The recording</p>
+    <h2>What the agent's screen actually looked like</h2>
+    <p class="lede">Each of these is the decoded frame at that timestamp out of the finished recording — not a redraw. The coordinates are what telemetry logged, and are where the click rings land in the video.</p><div class="stills"><figure class="still"><img src="assets/stills/still_01.jpg" alt="frame at 2.01s: type: full name" loading="lazy"><figcaption><span class="t">type: full name</span><span class="ts">t = 2.01s · (528, 580)</span></figcaption></figure><figure class="still"><img src="assets/stills/still_02.jpg" alt="frame at 3.6s: type: street address" loading="lazy"><figcaption><span class="t">type: street address</span><span class="ts">t = 3.60s · (528, 657)</span></figcaption></figure><figure class="still"><img src="assets/stills/still_03.jpg" alt="frame at 5.07s: type: city" loading="lazy"><figcaption><span class="t">type: city</span><span class="ts">t = 5.07s · (367, 735)</span></figcaption></figure><figure class="still"><img src="assets/stills/still_04.jpg" alt="frame at 6.42s: type: postal code" loading="lazy"><figcaption><span class="t">type: postal code</span><span class="ts">t = 6.42s · (690, 735)</span></figcaption></figure><figure class="still"><img src="assets/stills/still_05.jpg" alt="frame at 8.46s: click: continue to payment" loading="lazy"><figcaption><span class="t">click: continue to payment</span><span class="ts">t = 8.46s · (304, 865)</span></figcaption></figure><figure class="still"><img src="assets/stills/still_06.jpg" alt="frame at 11.48s: fix: postal code" loading="lazy"><figcaption><span class="t">fix: postal code</span><span class="ts">t = 11.48s · (690, 733)</span></figcaption></figure><figure class="still"><img src="assets/stills/still_07.jpg" alt="frame at 13.26s: click: continue to payment" loading="lazy"><figcaption><span class="t">click: continue to payment</span><span class="ts">t = 13.26s · (304, 865)</span></figcaption></figure><figure class="still"><img src="assets/stills/still_08.jpg" alt="frame at 16.94s: type: card number" loading="lazy"><figcaption><span class="t">type: card number</span><span class="ts">t = 16.94s · (528, 535)</span></figcaption></figure><figure class="still"><img src="assets/stills/still_09.jpg" alt="frame at 19.15s: type: name on card" loading="lazy"><figcaption><span class="t">type: name on card</span><span class="ts">t = 19.15s · (528, 612)</span></figcaption></figure><figure class="still"><img src="assets/stills/still_10.jpg" alt="frame at 21.1s: type: expiry" loading="lazy"><figcaption><span class="t">type: expiry</span><span class="ts">t = 21.10s · (367, 690)</span></figcaption></figure><figure class="still"><img src="assets/stills/still_11.jpg" alt="frame at 22.93s: type: cvc" loading="lazy"><figcaption><span class="t">type: cvc</span><span class="ts">t = 22.93s · (690, 690)</span></figcaption></figure><figure class="still"><img src="assets/stills/still_12.jpg" alt="frame at 24.89s: click: pay (attempt 1)" loading="lazy"><figcaption><span class="t">click: pay (attempt 1)</span><span class="ts">t = 24.89s · (273, 807)</span></figcaption></figure><figure class="still"><img src="assets/stills/still_13.jpg" alt="frame at 31.46s: click: pay (attempt 2)" loading="lazy"><figcaption><span class="t">click: pay (attempt 2)</span><span class="ts">t = 31.46s · (282, 865)</span></figcaption></figure><figure class="still"><img src="assets/stills/still_14.jpg" alt="frame at 38.02s: click: pay (attempt 3)" loading="lazy"><figcaption><span class="t">click: pay (attempt 3)</span><span class="ts">t = 38.02s · (282, 865)</span></figcaption></figure></div>
+  </div>
+</section>
+
+<!-- ================= VERDICT ================= -->
+<section>
+  <div class="container">
+    <p class="eyebrow">Outcome</p>
+    <h2>What each workflow can hand you</h2>
+    <p class="lede">Three recordings of the same checkout. Tokens are the same
+    1,100-per-image figure applied to every set, so the comparison is
+    like-for-like.</p>
+    <div class="verdicts">
+      <div class="vcard">
+        <div class="tag">Workflow A</div>
+        <h3>Screenshots only</h3>
+        <div class="role">screenshot after each action</div>
+        <div class="vstat"><span class="k">Images to the model</span><span class="v">24</span></div>
+        <div class="vstat"><span class="k">Visual tokens</span><span class="v">26,400</span></div>
+        <div class="vstat"><span class="k">Bit-identical repeats</span><span class="v">1</span></div>
+        <div class="vstat"><span class="k">Review video</span><span class="v bad">none</span></div>
+        <div class="vstat"><span class="k">PR-ready GIF</span><span class="v bad">none</span></div>
+        <div class="vstat"><span class="k">Crash evidence</span><span class="v bad">none</span></div>
+      </div>
+      <div class="vcard">
+        <div class="tag">Workflow B</div>
+        <h3>DIY ffmpeg</h3>
+        <div class="role">x11grab · 1 fps frames · 1-pass GIF</div>
+        <div class="vstat"><span class="k">Images to the model</span><span class="v warn">51</span></div>
+        <div class="vstat"><span class="k">Visual tokens</span><span class="v warn">56,100</span></div>
+        <div class="vstat"><span class="k">Bit-identical repeats</span><span class="v bad">21 of 50</span></div>
+        <div class="vstat"><span class="k">Review video</span><span class="v">403.7 KB</span></div>
+        <div class="vstat"><span class="k">PR-ready GIF</span><span class="v warn">1,945.1 KB</span></div>
+        <div class="vstat"><span class="k">Survives SIGKILL</span><span class="v bad">no</span></div>
+      </div>
+      <div class="vcard win">
+        <div class="tag">Workflow C</div>
+        <h3>Dynamo</h3>
+        <div class="role">managed display · reducer · two-pass GIF</div>
+        <div class="vstat"><span class="k">Images to the model</span><span class="v good">29</span></div>
+        <div class="vstat"><span class="k">Visual tokens</span><span class="v">31,900</span></div>
+        <div class="vstat"><span class="k">Bit-identical repeats</span><span class="v good">1 of 28</span></div>
+        <div class="vstat"><span class="k">Review video</span><span class="v good">415.6 KB</span></div>
+        <div class="vstat"><span class="k">PR-ready GIF</span><span class="v">1,854.2 KB</span></div>
+        <div class="vstat"><span class="k">Survives agent crash</span><span class="v good">yes</span></div>
+      </div>
+    </div>
+    <p class="note" style="margin-top:18px"><b>Being straight about it:</b> screenshots-only and
+    Dynamo cost about the same in tokens (26,400 vs 31,900),
+    because both sample on <em>actions</em> rather than on wall-clock time. Dynamo's advantage is
+    not the token count — it is everything screenshots cannot produce at all: the video, the GIF,
+    the click overlays, the timing manifest, and a recording that survives a crash.</p>
+  </div>
+</section>
+
+<!-- ================= FILMSTRIPS ================= -->
+<section>
+  <div class="container">
+    <p class="eyebrow">Underlying metric</p>
+    <h2>Frame count is the wrong number. <em>Information per frame</em> is the right one.</h2>
+    <p class="lede">Each image set was decoded to a 64×64 RGB buffer and compared pixel-by-pixel
+    with its predecessor. No similarity threshold is used: two samples of a still screen are
+    <em>bit-identical</em>, so exact comparison is enough — and nothing here is a cutoff tuned to
+    get the answer we wanted. Red frames below are exact duplicates of the frame before them.</p>
+
+    <div class="strip-block"><div class="strip-head"><h4>Workflow A — screenshot after every agent action</h4><span class="meta">24 images · 26,400 tokens · 2,409,518 B · 1 bit-identical · mean Δ 3.29 · max Δ 22.03</span></div><div class="strip"><div class="fr keep"><img src="assets/kf_screens_01.jpg" alt="screenshots frame 1" loading="lazy"><div class="cap">#1</div></div><div class="fr keep"><img src="assets/kf_screens_02.jpg" alt="screenshots frame 2" loading="lazy"><div class="cap">#2</div></div><div class="fr keep"><img src="assets/kf_screens_03.jpg" alt="screenshots frame 3" loading="lazy"><div class="cap">#3</div></div><div class="fr keep"><img src="assets/kf_screens_04.jpg" alt="screenshots frame 4" loading="lazy"><div class="cap">#4</div></div><div class="fr keep"><img src="assets/kf_screens_05.jpg" alt="screenshots frame 5" loading="lazy"><div class="cap">#5</div></div><div class="fr keep"><img src="assets/kf_screens_06.jpg" alt="screenshots frame 6" loading="lazy"><div class="cap">#6</div></div><div class="fr keep"><img src="assets/kf_screens_07.jpg" alt="screenshots frame 7" loading="lazy"><div class="cap">#7</div></div><div class="fr keep"><img src="assets/kf_screens_08.jpg" alt="screenshots frame 8" loading="lazy"><div class="cap">#8</div></div><div class="fr dup"><img src="assets/kf_screens_09.jpg" alt="screenshots frame 9" loading="lazy"><div class="cap">#9</div></div><div class="fr keep"><img src="assets/kf_screens_10.jpg" alt="screenshots frame 10" loading="lazy"><div class="cap">#10</div></div><div class="fr keep"><img src="assets/kf_screens_11.jpg" alt="screenshots frame 11" loading="lazy"><div class="cap">#11</div></div><div class="fr keep"><img src="assets/kf_screens_12.jpg" alt="screenshots frame 12" loading="lazy"><div class="cap">#12</div></div><div class="fr keep"><img src="assets/kf_screens_13.jpg" alt="screenshots frame 13" loading="lazy"><div class="cap">#13</div></div><div class="fr keep"><img src="assets/kf_screens_14.jpg" alt="screenshots frame 14" loading="lazy"><div class="cap">#14</div></div><div class="fr keep"><img src="assets/kf_screens_15.jpg" alt="screenshots frame 15" loading="lazy"><div class="cap">#15</div></div><div class="fr keep"><img src="assets/kf_screens_16.jpg" alt="screenshots frame 16" loading="lazy"><div class="cap">#16</div></div><div class="fr keep"><img src="assets/kf_screens_17.jpg" alt="screenshots frame 17" loading="lazy"><div class="cap">#17</div></div><div class="fr keep"><img src="assets/kf_screens_18.jpg" alt="screenshots frame 18" loading="lazy"><div class="cap">#18</div></div><div class="fr keep"><img src="assets/kf_screens_19.jpg" alt="screenshots frame 19" loading="lazy"><div class="cap">#19</div></div><div class="fr keep"><img src="assets/kf_screens_20.jpg" alt="screenshots frame 20" loading="lazy"><div class="cap">#20</div></div><div class="fr keep"><img src="assets/kf_screens_21.jpg" alt="screenshots frame 21" loading="lazy"><div class="cap">#21</div></div><div class="fr keep"><img src="assets/kf_screens_22.jpg" alt="screenshots frame 22" loading="lazy"><div class="cap">#22</div></div><div class="fr keep"><img src="assets/kf_screens_23.jpg" alt="screenshots frame 23" loading="lazy"><div class="cap">#23</div></div><div class="fr keep"><img src="assets/kf_screens_24.jpg" alt="screenshots frame 24" loading="lazy"><div class="cap">#24</div></div></div><svg class="spark" viewBox="0 0 600 66" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="#5C6673" stroke-width="2" stroke-linejoin="round" points="0.0,58.7 26.1,59.0 52.2,59.4 78.3,56.7 104.3,60.0 130.4,57.5 156.5,24.2 182.6,60.0 208.7,58.8 234.8,58.7 260.9,59.0 287.0,59.3 313.0,58.8 339.1,59.8 365.2,8.0 391.3,34.5 417.4,59.7 443.5,58.8 469.6,59.2 495.7,59.6 521.7,18.4 547.8,58.7 573.9,54.6"/></svg></div>
+    <p class="note">Action-driven, so almost no waste — and <b>still no video at all</b>. A bug
+    report from this workflow is a folder of PNGs with no way to see what happened between them.</p>
+
+    <div class="strip-block"><div class="strip-head"><h4>Workflow B — DIY ffmpeg, one frame per wall-clock second</h4><span class="meta">51 images · 56,100 tokens · 9,454,011 B · 21 bit-identical · mean Δ 1.75 · max Δ 22.33</span></div><div class="strip"><div class="fr keep"><img src="assets/kf_diy_001.jpg" alt="diy frame 1" loading="lazy"><div class="cap">#1</div></div><div class="fr keep"><img src="assets/kf_diy_002.jpg" alt="diy frame 2" loading="lazy"><div class="cap">#2</div></div><div class="fr keep"><img src="assets/kf_diy_003.jpg" alt="diy frame 3" loading="lazy"><div class="cap">#3</div></div><div class="fr keep"><img src="assets/kf_diy_004.jpg" alt="diy frame 4" loading="lazy"><div class="cap">#4</div></div><div class="fr keep"><img src="assets/kf_diy_005.jpg" alt="diy frame 5" loading="lazy"><div class="cap">#5</div></div><div class="fr keep"><img src="assets/kf_diy_006.jpg" alt="diy frame 6" loading="lazy"><div class="cap">#6</div></div><div class="fr keep"><img src="assets/kf_diy_007.jpg" alt="diy frame 7" loading="lazy"><div class="cap">#7</div></div><div class="fr keep"><img src="assets/kf_diy_008.jpg" alt="diy frame 8" loading="lazy"><div class="cap">#8</div></div><div class="fr keep"><img src="assets/kf_diy_009.jpg" alt="diy frame 9" loading="lazy"><div class="cap">#9</div></div><div class="fr keep"><img src="assets/kf_diy_010.jpg" alt="diy frame 10" loading="lazy"><div class="cap">#10</div></div><div class="fr dup"><img src="assets/kf_diy_011.jpg" alt="diy frame 11" loading="lazy"><div class="cap">#11</div></div><div class="fr dup"><img src="assets/kf_diy_012.jpg" alt="diy frame 12" loading="lazy"><div class="cap">#12</div></div><div class="fr keep"><img src="assets/kf_diy_013.jpg" alt="diy frame 13" loading="lazy"><div class="cap">#13</div></div><div class="fr keep"><img src="assets/kf_diy_014.jpg" alt="diy frame 14" loading="lazy"><div class="cap">#14</div></div><div class="fr keep"><img src="assets/kf_diy_015.jpg" alt="diy frame 15" loading="lazy"><div class="cap">#15</div></div><div class="fr dup"><img src="assets/kf_diy_016.jpg" alt="diy frame 16" loading="lazy"><div class="cap">#16</div></div><div class="fr dup"><img src="assets/kf_diy_017.jpg" alt="diy frame 17" loading="lazy"><div class="cap">#17</div></div><div class="fr keep"><img src="assets/kf_diy_018.jpg" alt="diy frame 18" loading="lazy"><div class="cap">#18</div></div><div class="fr dup"><img src="assets/kf_diy_019.jpg" alt="diy frame 19" loading="lazy"><div class="cap">#19</div></div><div class="fr keep"><img src="assets/kf_diy_020.jpg" alt="diy frame 20" loading="lazy"><div class="cap">#20</div></div><div class="fr dup"><img src="assets/kf_diy_021.jpg" alt="diy frame 21" loading="lazy"><div class="cap">#21</div></div><div class="fr keep"><img src="assets/kf_diy_022.jpg" alt="diy frame 22" loading="lazy"><div class="cap">#22</div></div><div class="fr dup"><img src="assets/kf_diy_023.jpg" alt="diy frame 23" loading="lazy"><div class="cap">#23</div></div><div class="fr keep"><img src="assets/kf_diy_024.jpg" alt="diy frame 24" loading="lazy"><div class="cap">#24</div></div><div class="fr dup"><img src="assets/kf_diy_025.jpg" alt="diy frame 25" loading="lazy"><div class="cap">#25</div></div><div class="fr keep"><img src="assets/kf_diy_026.jpg" alt="diy frame 26" loading="lazy"><div class="cap">#26</div></div><div class="fr keep"><img src="assets/kf_diy_027.jpg" alt="diy frame 27" loading="lazy"><div class="cap">#27</div></div><div class="fr dup"><img src="assets/kf_diy_028.jpg" alt="diy frame 28" loading="lazy"><div class="cap">#28</div></div><div class="fr keep"><img src="assets/kf_diy_029.jpg" alt="diy frame 29" loading="lazy"><div class="cap">#29</div></div><div class="fr dup"><img src="assets/kf_diy_030.jpg" alt="diy frame 30" loading="lazy"><div class="cap">#30</div></div><div class="fr dup"><img src="assets/kf_diy_031.jpg" alt="diy frame 31" loading="lazy"><div class="cap">#31</div></div><div class="fr keep"><img src="assets/kf_diy_032.jpg" alt="diy frame 32" loading="lazy"><div class="cap">#32</div></div><div class="fr keep"><img src="assets/kf_diy_033.jpg" alt="diy frame 33" loading="lazy"><div class="cap">#33</div></div><div class="fr keep"><img src="assets/kf_diy_034.jpg" alt="diy frame 34" loading="lazy"><div class="cap">#34</div></div><div class="fr keep"><img src="assets/kf_diy_035.jpg" alt="diy frame 35" loading="lazy"><div class="cap">#35</div></div><div class="fr dup"><img src="assets/kf_diy_036.jpg" alt="diy frame 36" loading="lazy"><div class="cap">#36</div></div><div class="fr dup"><img src="assets/kf_diy_037.jpg" alt="diy frame 37" loading="lazy"><div class="cap">#37</div></div><div class="fr dup"><img src="assets/kf_diy_038.jpg" alt="diy frame 38" loading="lazy"><div class="cap">#38</div></div><div class="fr keep"><img src="assets/kf_diy_039.jpg" alt="diy frame 39" loading="lazy"><div class="cap">#39</div></div><div class="fr keep"><img src="assets/kf_diy_040.jpg" alt="diy frame 40" loading="lazy"><div class="cap">#40</div></div><div class="fr dup"><img src="assets/kf_diy_041.jpg" alt="diy frame 41" loading="lazy"><div class="cap">#41</div></div><div class="fr keep"><img src="assets/kf_diy_042.jpg" alt="diy frame 42" loading="lazy"><div class="cap">#42</div></div><div class="fr dup"><img src="assets/kf_diy_043.jpg" alt="diy frame 43" loading="lazy"><div class="cap">#43</div></div><div class="fr dup"><img src="assets/kf_diy_044.jpg" alt="diy frame 44" loading="lazy"><div class="cap">#44</div></div><div class="fr dup"><img src="assets/kf_diy_045.jpg" alt="diy frame 45" loading="lazy"><div class="cap">#45</div></div><div class="fr keep"><img src="assets/kf_diy_046.jpg" alt="diy frame 46" loading="lazy"><div class="cap">#46</div></div><div class="fr dup"><img src="assets/kf_diy_047.jpg" alt="diy frame 47" loading="lazy"><div class="cap">#47</div></div><div class="fr keep"><img src="assets/kf_diy_048.jpg" alt="diy frame 48" loading="lazy"><div class="cap">#48</div></div><div class="fr dup"><img src="assets/kf_diy_049.jpg" alt="diy frame 49" loading="lazy"><div class="cap">#49</div></div><div class="fr dup"><img src="assets/kf_diy_050.jpg" alt="diy frame 50" loading="lazy"><div class="cap">#50</div></div><div class="fr keep"><img src="assets/kf_diy_051.jpg" alt="diy frame 51" loading="lazy"><div class="cap">#51</div></div></div><svg class="spark" viewBox="0 0 600 66" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="#FF5F5F" stroke-width="2" stroke-linejoin="round" points="0.0,38.7 12.0,59.1 24.0,58.7 36.0,59.9 48.0,59.0 60.0,59.5 72.0,59.8 84.0,58.4 96.0,57.7 108.0,60.0 120.0,60.0 132.0,57.4 144.0,24.2 156.0,60.0 168.0,60.0 180.0,60.0 192.0,58.8 204.0,60.0 216.0,58.6 228.0,60.0 240.0,59.0 252.0,60.0 264.0,59.3 276.0,60.0 288.0,58.6 300.0,59.9 312.0,60.0 324.0,8.0 336.0,60.0 348.0,60.0 360.0,33.8 372.0,59.1 384.0,59.9 396.0,58.8 408.0,60.0 420.0,60.0 432.0,60.0 444.0,58.8 456.0,59.9 468.0,60.0 480.0,18.0 492.0,60.0 504.0,60.0 516.0,60.0 528.0,58.4 540.0,60.0 552.0,54.5 564.0,60.0 576.0,60.0 588.0,59.9"/></svg></div>
+    <p class="note"><span class="r">21 of 50
+    consecutive pairs are bit-identical.</span> Wall-clock sampling cannot know the agent was
+    idle, so it keeps paying full price for a still screen: 56,100 tokens and
+    9,454,011 B of PNG to convey what 30 distinct
+    frames already said.</p>
+
+    <div class="strip-block"><div class="strip-head"><h4>Workflow C — Dynamo token reducer</h4><span class="meta">29 images · 31,900 tokens · 919,414 B · 1 bit-identical · mean Δ 11.36 · max Δ 240.11</span></div><div class="strip"><div class="fr keep"><img src="assets/kf_dynamo_0001.jpg" alt="dynamo frame 1" loading="lazy"><div class="cap">#1</div></div><div class="fr keep"><img src="assets/kf_dynamo_0002.jpg" alt="dynamo frame 2" loading="lazy"><div class="cap">#2</div></div><div class="fr keep"><img src="assets/kf_dynamo_0003.jpg" alt="dynamo frame 3" loading="lazy"><div class="cap">#3</div></div><div class="fr keep"><img src="assets/kf_dynamo_0004.jpg" alt="dynamo frame 4" loading="lazy"><div class="cap">#4</div></div><div class="fr keep"><img src="assets/kf_dynamo_0005.jpg" alt="dynamo frame 5" loading="lazy"><div class="cap">#5</div></div><div class="fr keep"><img src="assets/kf_dynamo_0006.jpg" alt="dynamo frame 6" loading="lazy"><div class="cap">#6</div></div><div class="fr keep"><img src="assets/kf_dynamo_0007.jpg" alt="dynamo frame 7" loading="lazy"><div class="cap">#7</div></div><div class="fr keep"><img src="assets/kf_dynamo_0008.jpg" alt="dynamo frame 8" loading="lazy"><div class="cap">#8</div></div><div class="fr keep"><img src="assets/kf_dynamo_0009.jpg" alt="dynamo frame 9" loading="lazy"><div class="cap">#9</div></div><div class="fr keep"><img src="assets/kf_dynamo_0010.jpg" alt="dynamo frame 10" loading="lazy"><div class="cap">#10</div></div><div class="fr keep"><img src="assets/kf_dynamo_0011.jpg" alt="dynamo frame 11" loading="lazy"><div class="cap">#11</div></div><div class="fr keep"><img src="assets/kf_dynamo_0012.jpg" alt="dynamo frame 12" loading="lazy"><div class="cap">#12</div></div><div class="fr keep"><img src="assets/kf_dynamo_0013.jpg" alt="dynamo frame 13" loading="lazy"><div class="cap">#13</div></div><div class="fr keep"><img src="assets/kf_dynamo_0014.jpg" alt="dynamo frame 14" loading="lazy"><div class="cap">#14</div></div><div class="fr keep"><img src="assets/kf_dynamo_0015.jpg" alt="dynamo frame 15" loading="lazy"><div class="cap">#15</div></div><div class="fr keep"><img src="assets/kf_dynamo_0016.jpg" alt="dynamo frame 16" loading="lazy"><div class="cap">#16</div></div><div class="fr keep"><img src="assets/kf_dynamo_0017.jpg" alt="dynamo frame 17" loading="lazy"><div class="cap">#17</div></div><div class="fr keep"><img src="assets/kf_dynamo_0018.jpg" alt="dynamo frame 18" loading="lazy"><div class="cap">#18</div></div><div class="fr keep"><img src="assets/kf_dynamo_0019.jpg" alt="dynamo frame 19" loading="lazy"><div class="cap">#19</div></div><div class="fr keep"><img src="assets/kf_dynamo_0020.jpg" alt="dynamo frame 20" loading="lazy"><div class="cap">#20</div></div><div class="fr keep"><img src="assets/kf_dynamo_0021.jpg" alt="dynamo frame 21" loading="lazy"><div class="cap">#21</div></div><div class="fr keep"><img src="assets/kf_dynamo_0022.jpg" alt="dynamo frame 22" loading="lazy"><div class="cap">#22</div></div><div class="fr keep"><img src="assets/kf_dynamo_0023.jpg" alt="dynamo frame 23" loading="lazy"><div class="cap">#23</div></div><div class="fr keep"><img src="assets/kf_dynamo_0024.jpg" alt="dynamo frame 24" loading="lazy"><div class="cap">#24</div></div><div class="fr keep"><img src="assets/kf_dynamo_0025.jpg" alt="dynamo frame 25" loading="lazy"><div class="cap">#25</div></div><div class="fr keep"><img src="assets/kf_dynamo_0026.jpg" alt="dynamo frame 26" loading="lazy"><div class="cap">#26</div></div><div class="fr dup"><img src="assets/kf_dynamo_0027.jpg" alt="dynamo frame 27" loading="lazy"><div class="cap">#27</div></div><div class="fr keep"><img src="assets/kf_dynamo_0028.jpg" alt="dynamo frame 28" loading="lazy"><div class="cap">#28</div></div><div class="fr keep"><img src="assets/kf_dynamo_0029.jpg" alt="dynamo frame 29" loading="lazy"><div class="cap">#29</div></div></div><svg class="spark" viewBox="0 0 600 66" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="#C8FF3D" stroke-width="2" stroke-linejoin="round" points="0.0,59.9 21.4,59.9 42.9,59.9 64.3,59.9 85.7,59.7 107.1,60.0 128.6,59.7 150.0,56.7 171.4,60.0 192.9,60.0 214.3,59.9 235.7,59.9 257.1,59.9 278.6,59.9 300.0,59.9 321.4,55.2 342.9,60.0 364.3,60.0 385.7,57.6 407.1,59.9 428.6,59.9 450.0,60.0 471.4,59.9 492.9,56.2 514.3,60.0 535.7,60.0 557.1,59.4 578.6,8.0"/></svg></div>
+    <p class="note"><span class="g">mean Δ 11.36 vs
+    1.75</span> — 31,900 tokens instead of
+    56,100, because the reducer keeps the exact frame at every logged action plus the
+    7 scene changes the detector found, and drops the rest. The
+    spikes are real transitions: the card visual filling in, the step bar advancing, the decline
+    banner appearing.</p>
+
+    <div class="legend">
+      <span><i style="background:#5C6673"></i>A · screenshots</span>
+      <span><i style="background:#FF5F5F"></i>B · DIY</span>
+      <span><i style="background:#C8FF3D"></i>C · Dynamo</span>
+      <span style="color:var(--faint)">sparkline y-axis: mean absolute RGB difference between consecutive frames, 0–255</span>
+    </div>
+  </div>
+</section>
+
+<!-- ================= MEDIA ================= -->
+<section>
+  <div class="container">
+    <p class="eyebrow">Artifacts</p>
+    <h2>The same 52.1 seconds, <em>as reviewers receive them</em></h2>
+    <p class="lede">Both videos encode the identical checkout with libx264. Dynamo adds
+    <code>+faststart</code> so the browser can start playing before the file finishes downloading,
+    and burns the telemetry click-rings into the picture.</p>
+    <div class="media-grid">
+      <div class="media">
+        <video src="assets/naive.mp4" poster="assets/naive_poster.jpg" controls loop muted playsinline preload="metadata"></video>
+        <div class="cap">
+          <div class="t"><span>Workflow B — naive transcode</span><b>403.7 KB</b></div>
+          <div class="d">1,015 frames · 50.75 s · crf 28 · no faststart · no overlays</div>
+        </div>
+      </div>
+      <div class="media">
+        <video src="assets/repro.mp4" poster="assets/repro_poster.jpg" controls loop muted playsinline preload="metadata"></video>
+        <div class="cap">
+          <div class="t"><span>Workflow C — <code style="color:var(--volt)">dynamo export</code></span><b>415.6 KB</b></div>
+          <div class="d">1,042 frames · 52.1 s · crf 23 · +faststart · click rings</div>
+        </div>
+      </div>
+    </div>
+    <p class="note">Pause the Dynamo video at the second card decline and look for the lime ring on
+    the Pay button — that ring is rendered from <code>telemetry.jsonl</code>, not drawn by the page.
+    The naive video has no way to show it. On this content the two GIF sizes are close
+    (1,945.1 KB vs 1,854.2 KB at identical framerate and resolution): the
+    two-pass palette earns its keep on flat and dark UI, and on bytes alone it is close to a wash
+    here.</p>
+  </div>
+</section>
+
+<!-- ================= CRASH ================= -->
+<section>
+  <div class="container">
+    <p class="eyebrow">Failure modes</p>
+    <h2>What happens when CI reaps the job</h2>
+    <p class="lede">The most common way a recording pipeline fails: the runner is torn down before
+    ffmpeg finishes, so the <code>moov</code> atom is never written and the payload is unusable.
+    Both columns are real output from the same checkout.</p>
+    <div class="crash">
+      <div class="cbox bad">
+        <div class="hd"><i class="fa-solid fa-circle-xmark" style="color:var(--red)"></i>DIY — SIGKILL during capture</div>
+        <pre><span class="c">$ ffprobe diy_raw_9.mp4</span>
+[mov,mp4,m4a,3gp,3g2,mj2 @ 0x5e3678f60a00] moov atom not found</pre>
+        <div class="foot no">0 bytes of post-processing output · 0 frames recoverable</div>
+      </div>
+      <div class="cbox good">
+        <div class="hd"><i class="fa-solid fa-circle-check" style="color:var(--green)"></i>Dynamo — agent dies mid-checkout</div>
+        <pre><span class="c">$ ffprobe dynamo_crash.mp4</span>
+<span class="g">duration=7.900000</span>
+<span class="g">stream=h264 1440x900</span>   <span class="c"># fully decodable</span></pre>
+        <div class="foot ok">4 of 4 logged actions still in telemetry.jsonl</div>
+      </div>
+    </div>
+    <p class="note" style="margin-top:16px">The left column is not hypothetical — it is the literal
+    stderr from a real run. A missing <code>moov</code> atom is <b>not repairable</b> for MP4;
+    there is no index to rebuild from. That is exactly why Dynamo sends <code>SIGINT</code> to
+    ffmpeg on <em>every</em> exit path, including when your agent's code raises.</p>
+    <div class="media-grid" style="margin-top:16px">
+      <div class="media">
+        <video src="assets/dynamo_crash.mp4" poster="assets/crash_poster.jpg" controls loop muted playsinline preload="metadata"></video>
+        <div class="cap">
+          <div class="t"><span>Recording from the crashed run</span><b>7.9 s</b></div>
+          <div class="d">the agent died on its 5th action — the video up to that point is intact</div>
+        </div>
+      </div>
+      <div class="cbox">
+        <div class="hd"><i class="fa-solid fa-wave-square" style="color:var(--cyan)"></i>telemetry.jsonl — survived the crash</div>
+        <pre><span class="c">// assets/telemetry_crash.jsonl</span>
+{<span class="k">"timestamp"</span>: <span class="n">0.68</span>, <span class="k">"action"</span>: <span class="s">"type: full name"</span>, <span class="k">"x"</span>: <span class="n">528</span>, <span class="k">"y"</span>: <span class="n">580</span>}
+{<span class="k">"timestamp"</span>: <span class="n">2.11</span>, <span class="k">"action"</span>: <span class="s">"type: street address"</span>, <span class="k">"x"</span>: <span class="n">528</span>, <span class="k">"y"</span>: <span class="n">657</span>}
+{<span class="k">"timestamp"</span>: <span class="n">5.86</span>, <span class="k">"action"</span>: <span class="s">"click: continue to payment"</span>, <span class="k">"x"</span>: <span class="n">304</span>, <span class="k">"y"</span>: <span class="n">865</span>}</pre>
+        <div class="foot ok">every click that happened is still attributable to a frame</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= TABLE ================= -->
+<section>
+  <div class="container">
+    <p class="eyebrow">Every number</p>
+    <h2>Side by side</h2>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Measure</th>
+            <th class="num">A · Screenshots</th>
+            <th class="num">B · DIY ffmpeg</th>
+            <th class="num col-dyn">C · Dynamo</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td class="rowlab"><b>Images handed to the model</b><span>what the VLM actually sees</span></td>
+            <td class="num">24</td><td class="num warn">51</td><td class="num col-dyn">29</td></tr>
+          <tr><td class="rowlab"><b>Visual tokens</b><span>images × 1,100</span></td>
+            <td class="num">26,400</td><td class="num warn">56,100</td><td class="num col-dyn">31,900</td></tr>
+          <tr><td class="rowlab"><b>Distinct images</b><span>unique by pixel content</span></td>
+            <td class="num">23</td><td class="num warn">30</td><td class="num col-dyn">28</td></tr>
+          <tr><td class="rowlab"><b>Bit-identical repeats</b><span>paid for twice</span></td>
+            <td class="num">1</td><td class="num bad">21 / 50</td><td class="num col-dyn">1 / 28</td></tr>
+          <tr><td class="rowlab"><b>Mean frame-to-frame Δ</b><span>0–255, information density</span></td>
+            <td class="num">3.29</td><td class="num warn">1.75</td><td class="num col-dyn good">11.36</td></tr>
+          <tr><td class="rowlab"><b>Max frame-to-frame Δ</b><span>largest single change</span></td>
+            <td class="num">22.03</td><td class="num warn">22.33</td><td class="num col-dyn good">240.11</td></tr>
+          <tr><td class="rowlab"><b>Frame payload</b><span>bytes on disk</span></td>
+            <td class="num">2,409,518 B</td><td class="num bad">9,454,011 B</td><td class="num col-dyn good">919,414 B</td></tr>
+          <tr><td class="rowlab"><b>Review video</b><span>attachable to a PR</span></td>
+            <td class="num bad">none</td><td class="num">403.7 KB</td><td class="num col-dyn">415.6 KB</td></tr>
+          <tr><td class="rowlab"><b>Plays before download finishes</b><span>+faststart</span></td>
+            <td class="num na">—</td><td class="num bad">no</td><td class="num col-dyn good">yes</td></tr>
+          <tr><td class="rowlab"><b>PR-ready GIF</b><span>same 15 fps, same resolution</span></td>
+            <td class="num na">—</td><td class="num warn">1,945.1 KB</td><td class="num col-dyn">1,854.2 KB</td></tr>
+          <tr><td class="rowlab"><b>Click overlays in the video</b><span>from telemetry</span></td>
+            <td class="num na">—</td><td class="num bad">no</td><td class="num col-dyn good">yes</td></tr>
+          <tr><td class="rowlab"><b>Causality</b><span>which click caused what</span></td>
+            <td class="num bad">unknown</td><td class="num bad">unknown</td><td class="num col-dyn good">manifest.json</td></tr>
+          <tr><td class="rowlab"><b>Survives a torn-down CI job</b><span>agent crash or SIGKILL</span></td>
+            <td class="num na">—</td><td class="num bad">no — moov atom not found</td><td class="num col-dyn good">yes</td></tr>
+          <tr><td class="rowlab"><b>Processes you must supervise</b><span>X server, recorder, transcode, sampler</span></td>
+            <td class="num">1</td><td class="num bad">4+</td><td class="num col-dyn good">1</td></tr>
+          <tr><td class="rowlab"><b>Raw capture frames</b><span>before reduction</span></td>
+            <td class="num na">0</td><td class="num">1,015</td><td class="num col-dyn">1,042</td></tr>
+          <tr><td class="rowlab"><b>Reduction vs. raw capture</b><span>manifest-reported</span></td>
+            <td class="num na">—</td><td class="num">42.0% dups removed</td><td class="num col-dyn good">97.22%</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CAPABILITIES ================= -->
+<section>
+  <div class="container">
+    <p class="eyebrow">Capability coverage</p>
+    <h2>What each workflow can do at all</h2>
+    <p class="lede">Not a score out of ten — just the list, with the measured result or the honest
+    reason it is missing.</p>
+    <div class="caps">
+      <div class="cap"><div class="ic"><i class="fa-solid fa-display"></i></div>
+        <h4>Manages the display</h4>
+        <p>Owns the Xvfb lifecycle and blocks on a socket probe until X accepts connections. No <code>DISPLAY</code> export, no sleep, no flake.</p>
+        <div class="metric">display ready in &lt;0.5 s, verified</div></div>
+      <div class="cap miss"><div class="ic"><i class="fa-solid fa-clock"></i></div>
+        <h4>Waits for X to be ready</h4>
+        <p>DIY scripts race Xvfb startup. That race is why hand-rolled captures sometimes start against a half-built server.</p>
+        <div class="metric">not handled — you own the race</div></div>
+      <div class="cap"><div class="ic"><i class="fa-solid fa-shield-halved"></i></div>
+        <h4>Crash-safe finalisation</h4>
+        <p>Sends <code>SIGINT</code> to ffmpeg on every exit path, including when the agent raises, so the <code>moov</code> atom is always written.</p>
+        <div class="metric">7.9 s file decodes after a mid-run crash</div></div>
+      <div class="cap miss"><div class="ic"><i class="fa-solid fa-file-circle-xmark"></i></div>
+        <h4>Crash-safe finalisation</h4>
+        <p>A <code>SIGKILL</code> during capture leaves a container with no index. Verified against real ffprobe output.</p>
+        <div class="metric">moov atom not found</div></div>
+      <div class="cap"><div class="ic"><i class="fa-solid fa-compress"></i></div>
+        <h4>Token-budgeted keyframes</h4>
+        <p>Scene detection plus the exact frame at every logged action, deduplicated and downsampled. Action anchors are never dropped.</p>
+        <div class="metric">1042 → 29 frames · 97.22% reduction</div></div>
+      <div class="cap miss"><div class="ic"><i class="fa-solid fa-list-ol"></i></div>
+        <h4>Chooses frames by meaning</h4>
+        <p>Sampling by wall-clock second pays full price for still screens. It cannot know the agent was idle.</p>
+        <div class="metric">21 of 50 pairs bit-identical</div></div>
+      <div class="cap"><div class="ic"><i class="fa-solid fa-list-check"></i></div>
+        <h4>Timing manifest</h4>
+        <p>Every kept frame carries its timestamp, the reason it was kept, and the action that caused it.</p>
+        <div class="metric">manifest.json · 29 entries</div></div>
+      <div class="cap"><div class="ic"><i class="fa-solid fa-crosshairs"></i></div>
+        <h4>Click overlays</h4>
+        <p>Replays the telemetry timeline and burns rings and crosshairs into the video at the logged coordinates.</p>
+        <div class="metric">24 positioned actions, 0 app code involved</div></div>
+      <div class="cap"><div class="ic"><i class="fa-solid fa-camera"></i></div>
+        <h4>Mid-run screenshots</h4>
+        <p>Grab the framebuffer from inside the agent loop, in memory, without touching the recorder.</p>
+        <div class="metric">PNG bytes returned to the caller</div></div>
+      <div class="cap"><div class="ic"><i class="fa-solid fa-layer-group"></i></div>
+        <h4>Two-pass GIF</h4>
+        <p><code>palettegen</code> with <code>stats_mode=diff</code>, then bayer dithering at 128 colours. On this content the byte win is modest — the real gain is banding on flat UI.</p>
+        <div class="metric">1,854.2 KB vs 1,945.1 KB at identical fps and size</div></div>
+      <div class="cap"><div class="ic"><i class="fa-solid fa-gauge-high"></i></div>
+        <h4>CPU only</h4>
+        <p>No GPU anywhere in the pipeline. Framerate and CRF are the two knobs that decide whether a session fits a sandbox budget.</p>
+        <div class="metric">capture 52.3 s · full export 74 s</div></div>
+      <div class="cap"><div class="ic"><i class="fa-solid fa-plug"></i></div>
+        <h4>Works with what you run</h4>
+        <p>Playwright, Selenium, any GUI toolkit, any X11 client. Point <code>DISPLAY</code> at the harness and it is captured — browser chrome included.</p>
+        <div class="metric">zero runtime dependencies</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= INSPECTION CAPABILITIES ================= -->
+<section>
+  <div class="container">
+    <p class="eyebrow">Everything else an agent needs from a screen</p>
+    <h2>Recording is one capability. <em>An agent needs four more</em> to actually work unattended.</h2>
+    <p class="lede">Above covers recording, GIF export and the virtual display. Those get an agent a
+    <em>replay</em>. What they cannot do is tell it <em>what error</em> the page showed, <em>which pixels moved</em>,
+    or <em>where the button is</em> — and those are the questions an unattended agent actually asks. On a normal
+    page you can get them from the DOM. On a canvas, a VNC session or a HiDPI display you cannot, and no operating
+    system ships a headless tool for it. Each block below is a measured run against this same real storefront in
+    the same real browser: <code>dynamo capture</code>, <code>ocr</code>, <code>diff</code> and <code>som</code>.</p>
+
+    <!-- ---------- 1. region snips ---------- -->
+    <div class="insp">
+      <div class="insp-hd">
+        <h3><span class="tag">capture</span> Region snips</h3>
+        <span class="sub">whole screen 1440×900 vs
+          646×102 of it</span>
+      </div>
+      <div class="insp-bd">
+        <div>
+          <div class="shot"><img src="assets/inspection/capture_full.png" alt="full screenshot of the checkout page with the postal-code validator firing" loading="lazy"></div>
+          <div class="insp-verdict"><b>whole screen</b> — 91,383 B ·
+            1.30 MP</div>
+        </div>
+        <div>
+          <div class="shot"><img src="assets/inspection/capture_snip.png" alt="the cropped error banner only" loading="lazy" style="image-rendering:auto;background:#111"></div>
+          <div class="insp-verdict"><b>the banner only</b> — 4,256 B ·
+            0.066 MP<br>
+            <span class="good">4.7% of the bytes</span> ·
+            read correctly in 0.07s
+          </div>
+        </div>
+      </div>
+      <div style="padding:0 20px 20px">
+        <div class="insp-facts">
+          <div class="vstat"><span class="k">Bytes, whole screen → banner</span><span class="v">91,383 → 4,256</span></div>
+          <div class="vstat"><span class="k">Tokens, flat 1,100/image pricing</span><span class="v">1,100 → 1,100</span></div>
+          <div class="vstat"><span class="k">Tokens, sized by megapixels</span><span class="v">991 → 50</span></div>
+          <div class="vstat"><span class="k">Error still legible after the crop</span><span class="v good">yes</span></div>
+          <div class="vstat"><span class="k">OCR confidence, whole screen → banner</span><span class="v">73.8% → 81.3%</span></div>
+        </div>
+        <p class="insp-note"><b>The honest part:</b> under flat per-image pricing a snip saves
+          <span class="bad">nothing</span> — 1,100 tokens either way, because the
+          model is billed per image and the crop is still one image. Sized pricing tells the other story:
+          991 → 50 tokens. The crop's real
+          win is not the price of <em>this</em> call — it is that a focused image is both cheaper to look at and
+          measurably easier to read: confidence rose from 73.8% to
+          81.3% because Tesseract's page analysis no longer has to decide which part
+          of a 1440×900 frame is the text.</p>
+      </div>
+    </div>
+
+    <!-- ---------- 2. OCR ---------- -->
+    <div class="insp">
+      <div class="insp-hd">
+        <h3><span class="tag">ocr</span> Text off pixels</h3>
+        <span class="sub">gateway console — log painted to <canvas> · 11 log lines ·
+          DOM text available: no</span>
+      </div>
+      <div class="insp-bd one">
+        <div>
+          <div class="shot"><img src="assets/inspection/ocr_page.png" alt="payment gateway console with a transaction log" loading="lazy"></div>
+        </div>
+        <div>
+          <div class="insp-facts">
+            <div class="vstat"><span class="k"><code>document.querySelector('#log').textContent</code></span><span class="v bad">canvas.textContent = "" — nothing to scrape; pixels only</span></div>
+            <div class="vstat"><span class="k">Tokens recognised, whole screen</span><span class="v">20 in 0.70s</span></div>
+            <div class="vstat"><span class="k">Tokens recognised, log panel only</span><span class="v">12 in 0.75s</span></div>
+            <div class="vstat"><span class="k">Recall — verbatim</span><span class="v">75%</span></div>
+            <div class="vstat"><span class="k">Recall — through glyph folding</span><span class="v good">100%</span></div>
+            <div class="vstat"><span class="k">Mean word confidence</span><span class="v">75.7%</span></div>
+            <div class="vstat"><span class="k">Words agreed with the page's own log</span><span class="v">49 of 56 (88%)</span></div>
+          </div>
+        </div>
+      </div>
+      <div style="padding:0 20px 20px">
+        <p class="insp-note"><b>This is the case no OS covers.</b> macOS Live Text and the Windows Snipping Tool
+        both exist, both are interactive overlays, and neither is reachable from a shell. The log above is painted to
+        a <code>&lt;canvas&gt;</code>, so a scraper finds the empty string — the probe on the page proves it. OCR reads
+        it locally for free in 0.75s and hands back <em>word boxes</em>, which is what lets
+        you point back at the pixels you just read.</p>
+        <p class="insp-note"><b>And it gets some things wrong, measurably.</b> Against the page's own log, Tesseract
+        returns:</p>
+<pre class="transcript"><span class="lbl">truth   </span><span class="was">09:12:44.201Z issuer.acquirer DECLINED reason=do_not_honor response.code=05 response.text=Do not honor</span>
+<span class="lbl">ocr     </span><span class="now">09:12:44.201Z issuer.acquirer DECLINED reason=do_not_honor response.code=@5 response.text=Do not honor</span>
+
+<span class="lbl">truth   </span><span class="was">09:12:44.310Z gateway.txn terminal state=FAILED retryable=false attempt=3 of 3</span>
+<span class="lbl">ocr     </span><span class="now">09:12:44.3102 gateway. txn terminal state=FAILED retryable=false attempt=3 of 3</span></pre>
+        <p class="insp-note">It reads <code>O</code> as <code>0</code>, <code>1</code> as <code>l</code>, and a
+        monospace underscore as a space. A character whitelist does not fix it and neither does any page-segmentation
+        mode — both were tried. So Dynamo does not pretend the text is exact: it keeps the recognised characters
+        verbatim for the report, and folds
+        <span class="good">2 of the
+        8 missed tokens</span> back into matches at <em>search</em> time. An agent
+        asking "is DO_NOT_HONOR on this screen" gets a yes; an agent pasting a transaction id into a ticket gets the
+        characters that were actually there.</p>
+      </div>
+    </div>
+
+    <!-- ---------- 3. diff ---------- -->
+    <div class="insp">
+      <div class="insp-hd">
+        <h3><span class="tag">diff</span> Visual regression</h3>
+        <span class="sub">3 injected CSS rules · 5,818 pixels ·
+          20 regions · 0.55s</span>
+      </div>
+      <div class="insp-bd">
+        <div>
+          <div class="shot"><img src="assets/inspection/diff_after.png" alt="checkout page after the CSS change was injected" loading="lazy"></div>
+          <div class="insp-verdict"><b>after</b> — three CSS rules injected:
+            <code>.steps li + li { margin-left: 26px }</code>,
+            <code>.field label { letter-spacing: .04em }</code>,
+            <code>.summary { padding: 18px 22px }</code></div>
+        </div>
+        <div>
+          <div class="shot"><img src="assets/inspection/diff_overlay.png" alt="diff overlay with changed pixels highlighted in red over a dimmed original" loading="lazy"></div>
+          <div class="insp-verdict"><b>diff</b> — 0.449% of
+            1,296,000 pixels changed, max Δ
+            0.86, 20 changed regions</div>
+        </div>
+      </div>
+      <div style="padding:0 20px 20px">
+        <div class="insp-facts">
+          <div class="vstat"><span class="k">Verdict</span><span class="v bad">not identical</span></div>
+          <div class="vstat"><span class="k">Changed pixels</span><span class="v">5,818 of 1,296,000</span></div>
+          <div class="vstat"><span class="k">Regions reported</span><span class="v">20 (cap 20)</span></div>
+          <div class="vstat"><span class="k">Largest region</span><span class="v">270×19 at (618,139)</span></div>
+          <div class="vstat"><span class="k">Control — same image against itself</span><span class="v good">0 changed, 0 regions</span></div>
+          <div class="vstat"><span class="k">Single field, cropped on both sides</span><span class="v">0.371% changed</span></div>
+        </div>
+        <p class="insp-note"><b>The red overlay is the deliverable.</b> Changed pixels in red over a dimmed original
+        is the artefact a reviewer actually looks at, and it is also something a vision model can describe in one
+        sentence. The control matters as much as the finding: the same image compared against itself reports
+        <span class="good">0 changed pixels</span>, so a non-zero result here is
+        signal rather than noise. A diff that flags everything gets switched off within a week, and then it catches
+        nothing — which is why <code>--threshold</code> and <code>--min-changed-pct</code> exist, and why both are
+        reported in the result rather than hidden behind the verdict.</p>
+      </div>
+    </div>
+
+    <!-- ---------- 4. grounding ---------- -->
+    <div class="insp">
+      <div class="insp-hd">
+        <h3><span class="tag">som</span> Grounding — description to coordinates</h3>
+        <span class="sub">17 live DOM elements numbered ·
+          viewport origin (0,85)</span>
+      </div>
+      <div class="insp-bd">
+        <div>
+          <div class="shot"><img src="assets/inspection/som_screen.png" alt="the checkout screenshot with numbered marks drawn over every interactive element" loading="lazy"></div>
+        </div>
+        <div>
+          <div class="shot dark"><img src="assets/inspection/som_screen.png" alt="" loading="lazy" style="display:none"></div>
+          <div class="insp-facts">
+            <div class="vstat"><span class="k">Interactive elements found in the live DOM</span><span class="v">17</span></div>
+            <div class="vstat"><span class="k">Marks drawn on the screenshot</span><span class="v">17</span></div>
+            <div class="vstat"><span class="k">Dropped — clipped by the viewport, no area to click</span><span class="v warn">0</span></div>
+            <div class="vstat"><span class="k">Screenshot cost, before → after</span><span class="v">87,464 → 91,536 B</span></div>
+            <div class="vstat"><span class="k">Model's answer (an index, not a point)</span><span class="v">16</span></div>
+            <div class="vstat"><span class="k">Element box, in <b>image</b> pixels</span><span class="v">182×38 at (214,847)</span></div>
+            <div class="vstat"><span class="k">Resolved click, in <b>image</b> pixels</span><span class="v good">(305, 866)</span></div>
+            <div class="vstat"><span class="k">Same click, in <b>pointer</b> pixels</span><span class="v">(305, 781)</span></div>
+          </div>
+        </div>
+      </div>
+      <div style="padding:0 20px 20px">
+        <div class="legend">  1  NorthwindOutfitters  <a>
+  2  Cart  <a>
+  3  Orders  <a>
+  4  Account  <a>
+  5  Email  <div>
+  6  email  <input>
+  7  Full name  <div>
+  8  name  <input>
+  9  Street address  <div>
+ 10  line1  <input>
+ 11  City  <div>
+ 12  city  <input>
+ 13  Postal code  <div>
+ 14  zip  <input>
+ 15  Country  <div>
+ 16  Continue to payment  <button>
+ 17  Back to cart  <button></div>
+        <p class="insp-note"><b>Why the model answers with a number.</b> Ask a vision model "continue to payment"
+        and it returns a coordinate by pattern-matching a description onto an image. It is wrong often enough to be
+        useless, and wrong <em>confidently</em>. Set-of-Marks draws the boxes instead, so the model replies with an
+        index — and a wrong answer is a wrong <em>index</em>, which is checkable, rather than a wrong coordinate,
+        which is not. The boxes came from a live DOM query and the pixels from the display; the only step between
+        them is the transform the surface reports (origin 0,85 — here the browser's own
+        chrome, not a scale factor, is what moves the page off the origin). Note the two rows above:
+        the box is in <em>image</em> pixels, the resolved click is in <em>pointer</em> pixels, and
+        they differ by exactly that origin. Reporting only one of them is how an agent ends up
+        clicking 85 pixels too low.</p>
+        <p class="insp-note"><b>One rule worth stating.</b> Grounding refuses any box with no area, because an
+        element clipped by the viewport reports a zero-height rect, cannot be clicked, and would still get a mark
+        drawn on it — inviting the model to pick an index that resolves to a point outside the button. On this page,
+        0 of 17 elements hit that case at the scroll position
+        shown, and 0 after scrolling the action row into view. The numbers are small here
+        because this viewport happens to fit the form; on a shorter window they are not, and the check is the
+        difference between a reported failure and a click that lands on empty page.</p>
+      </div>
+    </div>
+
+    <!-- ---------- 5. HiDPI ---------- -->
+    <div class="insp">
+      <div class="insp-hd">
+        <h3><span class="tag">scale</span> HiDPI coordinate drift — the silent failure</h3>
+        <span class="sub">2880×1600 image vs
+          1440×800 pointer space · drift 136,173 px</span>
+      </div>
+      <div class="insp-bd one">
+        <div>
+          <div class="hidpi-grid">
+            <div class="cell miss">
+              <img src="assets/inspection/hidpi_naive_click.png" alt="the page after clicking at the coordinate read straight off the 2x screenshot" loading="lazy">
+              <div class="cap2">clicked the coordinate <em>as seen</em> in the 2× image<b>the click never landed</b></div>
+            </div>
+            <div class="cell hit">
+              <img src="assets/inspection/hidpi_fixed_click.png" alt="the page after clicking the normalised coordinate" loading="lazy">
+              <div class="cap2">clicked the same button after normalising by the scale factor<b>the click landed</b></div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="insp-facts">
+            <div class="vstat"><span class="k">Screenshot resolution at devicePixelRatio 2</span><span class="v">2880×1600</span></div>
+            <div class="vstat"><span class="k">The button's <em>label</em>, found by OCR in the 2× image</span><span class="v">(202, 336) 140×23</span></div>
+            <div class="vstat"><span class="k">The button itself, per the DOM</span><span class="v">(89, 316) 287×70</span></div>
+            <div class="vstat"><span class="k">Naive click — coordinate as seen</span><span class="v bad">(272, 347) → did nothing</span></div>
+            <div class="vstat"><span class="k">Normalised click — ÷2</span><span class="v good">(136, 174) → landed</span></div>
+            <div class="vstat"><span class="k">OCR confidence on the 2880×1600 image</span><span class="v">83.3% in 1.24s</span></div>
+          </div>
+          <p class="insp-note"><b>This is measured, not asserted.</b> A real browser at
+          <code>devicePixelRatio: 2</code> was opened, OCR read the button's label out of the resulting
+          2880×1600 image, and the page was clicked twice. The
+          first click used that coordinate exactly as the agent saw it and <span class="bad">missed by
+          136,173 pixels</span>. The second normalised by the scale
+          factor and <span class="good">hit the button</span>. On a Retina MacBook or a 4K Windows display every
+          screenshot-triggered action fails this way, and it fails <em>quietly</em>: the click lands on empty page
+          space, so the agent sees no error and reports success. That is why the conversion lives in one place —
+          <code>Scale</code> — and everything else in the harness asks it rather than guessing.</p>
+          <p class="insp-note"><b>Note the two boxes above are not the same thing.</b> OCR returns
+          140×23 — the glyphs. The button is
+          287×70. Reading pixels finds <em>text</em>; it does not
+          find the control's border. That is precisely why element boxes come from the DOM or CDP and the harness
+          only draws them.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="code" style="margin-top:24px">
+      <div class="codecard">
+        <div class="hd"><span>The four, from a shell</span><span>bash</span></div>
+<pre><span class="c"># one region, not the whole screen</span>
+dynamo capture --region <span class="n">205,526,646,102</span> --out banner.png
+
+<span class="c"># is this error on screen, and where? exits 1 if not</span>
+dynamo ocr banner.png --find DO_NOT_HONOR --fuzzy
+dynamo ocr $DISPLAY --find ECONNREFUSED
+
+<span class="c"># visual regression gate — exits 1 when the UI moved</span>
+dynamo diff before.png after.png --out diff.png
+<span class="c">#   0.449% of pixels changed (5,818 of 1,296,000, max Δ 0.859), largest region 270x19 at (618,139)</span></pre>
+      </div>
+      <div class="codecard">
+        <div class="hd"><span>…and the same thing from Python</span><span>agent.py</span></div>
+<pre><span class="k">from</span> agent_visual_harness <span class="k">import</span> compare, read_region, resolve, Scale
+
+<span class="c"># text off pixels, with boxes back in screen coordinates</span>
+banner = h.<span class="c">read_region</span>(<span class="n">45</span>, <span class="n">294</span>, <span class="n">1360</span>, <span class="n">470</span>)
+<span class="k">if</span> banner.<span class="c">contains</span>(<span class="s">"DO_NOT_HONOR"</span>, fuzzy=<span class="k">True</span>):
+    <span class="c"># box_of returns (left, top, width, height) in screen pixels</span>
+    left, top, w, h = banner.<span class="c">box_of</span>(<span class="s">"DO_NOT_HONOR"</span>, fuzzy=<span class="k">True</span>)
+    h.<span class="c">click</span>(left + w // <span class="n">2</span>, top + h // <span class="n">2</span>)   <span class="c"># read it, then point at it</span>
+
+<span class="c"># before vs after, with the changed regions</span>
+d = compare(yesterday, h.<span class="c">take_screenshot</span>())
+<span class="k">if not</span> d.same:
+    d.<span class="c">save_diff</span>(<span class="s">"artifacts/diff.png"</span>)
+    <span class="k">for</span> region <span class="k">in</span> d.regions: <span class="c">print</span>(region.box, region.changed_pixels)
+
+<span class="c"># index -> coordinates, DPI-corrected</span>
+marks = h.<span class="c">ground</span>(boxes, scale=Scale(ratio=dpr))
+click_x, click_y = <span class="c">resolve</span>(marks, model_answer)</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= MODEL TRIAGE ================= -->
+<section>
+  <div class="container">
+    <p class="eyebrow">When a model is genuinely needed</p>
+    <h2>An open-weight model on the frame. <em>Not on the screen.</em></h2>
+    <p class="lede">The four blocks above are measured, not modelled — which is the point, and also
+    their limit: a diff can tell you <em>that</em> the layout moved, but not <em>what the decline
+    message said</em>. That last question needs a model, and it is where agents quietly become
+    expensive, because the obvious implementation sends the whole screen, every frame, every time.
+    <b>A frontier model may well read an image better than a 4B one. That is not the question.</b>
+    The question is whether you can afford to ask it 29 times a session, on
+    frames that mostly changed nothing, at full resolution. Three levers decide that, and none of
+    them is model quality:</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr>
+            <th>How the 29 keyframes reach the model</th>
+            <th class="num">frames sent</th>
+            <th class="num">sent whole</th>
+            <th class="num">visual tokens</th>
+            <th class="num">of sending all</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="rowlab"><b>Workflow A — every keyframe, whole</b><span>what a naive local agent does</span></td>
+            <td class="num">29</td>
+            <td class="num">0</td>
+            <td class="num">22,707</td>
+            <td class="num">100%</td>
+          </tr>
+          <tr>
+            <td class="rowlab"><b>Workflow B — cropped to what the diff says moved</b><span>the crop, on its own</span></td>
+            <td class="num">29</td>
+            <td class="num">20</td>
+            <td class="num">11,008</td>
+            <td class="num">48.5%</td>
+          </tr>
+          <tr class="col-dyn">
+            <td class="rowlab"><b>Workflow C — triaged</b><span>skip unchanged · filter · crop</span></td>
+            <td class="num">29</td>
+            <td class="num">20</td>
+            <td class="num">11,008</td>
+            <td class="num">48.5%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="insp-note"><b>Not measured — and the page says so.</b> The run behind this section wrote <code>measured: false</code>: --stub was passed: no model answered these frames. Two of the three columns are still real. <b>Tokens and crop geometry are measured</b> — the regions came from diffing the actual keyframes, and the prices come from the actual pixel area of the actual crops. <b>The routing column is not</b> — a stub filter passed every frame and a stub answered each one, so it shows what the pipeline <em>does</em>, not what a model <em>would</em> decide. Run <code>python3 demo/run_agent_bench.py</code> where Ollama is answering and this banner replaces itself.</p>
+
+    <div class="codecard"><div class="hd"><span>The filter's input, for one real frame</span><span>frame_0002.webp</span></div><pre>{
+  &quot;changed_regions&quot;: 20,
+  &quot;changed_share_of_screen&quot;: 0.0237,
+  &quot;frame_kind&quot;: &quot;action&quot;,
+  &quot;largest_change&quot;: [
+    188,
+    499,
+    562,
+    37
+  ],
+  &quot;last_action&quot;: &quot;type: street address&quot;,
+  &quot;on_screen&quot;: &quot;&quot;,
+  &quot;seconds_into_session&quot;: 3.6
+}</pre></div><p class="insp-note"><b>Note <code>on_screen</code> is empty.</b> OCR did not run on this machine, so the filter would be judging the action label and nothing about the screen itself. That is a weaker signal than the design intends, and showing it is more useful than describing it. Run with <code>--ocr</code> where tesseract is installed, or set <code>frame.text</code> yourself from whatever read the screen.</p>
+
+    <div class="insp" style="margin-top:18px">
+      <div class="insp-hd">
+        <h3><span class="tag">crop</span> The frame the model actually receives</h3>
+        <span class="sub">type: street address · 1280×800 → 578×296</span>
+      </div>
+      <div class="insp-bd one">
+        <div class="insp-facts">
+          <div class="vstat"><span class="k">The keyframe, whole — 1280×800, what the naive agent sends</span><span class="v">1.024 MP · 783 tokens</span></div>
+          <div class="vstat"><span class="k">The crop at (180, 491), what Dynamo sends</span><span class="v good">0.171 MP · 131 tokens</span></div>
+          <div class="vstat"><span class="k">Across all 29 keyframes, cropping lands at</span><span class="v">48.5% of the whole-screen price</span></div>
+          <div class="vstat"><span class="k">Of those keyframes, how many had a region to crop at all</span><span class="v">20 of 29</span></div>
+        </div>
+        <p class="insp-note">The crop is not a resize. It is the region the diff reported as changed,
+        cut out in ffmpeg <em>before</em> anything is encoded or sent — so the model is never asked to
+        ignore the rest of the screen, it is simply never shown it. That distinction is what makes a 4B
+        model viable on a CPU: 783 tokens of screen
+        becomes 131 tokens of the thing that actually
+        changed. On a payment decline that is the difference between paying for a 1440×900 screenshot
+        and paying for the error banner.</p>
+      </div>
+    </div>
+
+    <div class="code" style="margin-top:20px">
+      <div class="codecard">
+        <div class="hd"><span>The three levers, and the models are swappable</span><span>agent.py</span></div>
+<pre><span class="k">from</span> agent_visual_harness <span class="k">import</span> Frame, OllamaBackend, LayaBackend, Triage
+
+<span class="c"># every frame, whole: the baseline this section is measured against</span>
+whole = <span class="c">Triage</span>(<span class="c">OllamaBackend</span>(<span class="s">"qwen3-vl:4b"</span>), crop=<span class="k">False</span>)
+
+<span class="c"># skip unchanged -> Laya scores -> crop -> the VLM answers</span>
+triaged = <span class="c">Triage</span>(
+    <span class="c">OllamaBackend</span>(<span class="s">"qwen3-vl:4b"</span>),  <span class="c"># open weights, local</span>
+    filter=<span class="c">LayaBackend</span>(),                <span class="c"># typed, calibrated, no generation</span>
+    crop=<span class="k">True</span>,
+)
+
+report = triaged.<span class="c">run</span>(frames, <span class="s">"what did the user see go wrong?"</span>)
+<span class="k">print</span>(report.<span class="c">summary</span>())   <span class="c"># includes what it declined to send</span></pre>
+      </div>
+      <div class="codecard">
+        <div class="hd"><span>What the run reports about itself</span><span>report.summary()</span></div>
+<pre>question  What went wrong on this screen, and which step of the checkout does it belong to? Answer in one sentence.
+frames    29
+sent      29 to a generative model (29 answered, 0 never sent)
+filter    29 frames scored
+cropped   20 frames before sending
+tokens    22,707 -> 11,008 (48.5% of sending every frame whole)
+elapsed   1.06s</pre>
+      </div>
+    </div>
+
+    <p class="insp-note"><b>Where the open model actually wins, and where it does not.</b> It does not
+    win on reading a hard image — a frontier model sees more. It wins on everything around the
+    reading. The weights are Apache-2.0, so the pipeline can be shipped and inspected rather than
+    rented; the frame never leaves the machine, which matters when the screen contains someone's card
+    details; the answer is deterministic at temperature 0, so a regression gate stays a gate; and
+    because the same run holds the telemetry, an answer here can be tied back to a click at a
+    timestamp — something no screenshot alone can do, however well it is read. 29
+    keyframes at 48.5% of the whole-screen price is what buys
+    the budget to ask at all, and to escalate the two or three frames that genuinely need a bigger
+    model. Escalation is wired and off by default: <code>RemoteBackend</code> is only constructed if a
+    caller asks for it, and the report counts every frame that leaves.</p>
+  </div>
+</section>
+
+<!-- ================= CODE ================= -->
+<section>
+  <div class="container">
+    <p class="eyebrow">The swap</p>
+    <h2>What replaces what</h2>
+    <div class="code">
+      <div class="codecard bad">
+        <div class="hd"><span>Workflow B — what you write today</span><span>bash</span></div>
+<pre><span class="c"># start the display and hope it came up</span>
+Xvfb :99 -screen 0 1440x900x24 &amp;
+<span class="c"># immediately grab it. good luck.</span>
+DISPLAY=:99 ffmpeg -f x11grab -i :99 out.mp4 &amp;
+
+<span class="c"># ...run the agent...</span>
+
+<span class="c"># CI reaps us here. no trailer, no index.</span>
+kill -9 %2
+
+<span class="c"># post-processing, if we got lucky</span>
+ffmpeg -i out.mp4 -c:v libx264 -crf 28 naive.mp4
+ffmpeg -i out.mp4 -vf fps=15 naive.gif
+ffmpeg -i out.mp4 -vf fps=1 frames/f_%03d.png</pre>
+      </div>
+      <div class="codecard good">
+        <div class="hd"><span>Workflow C — dynamo</span><span>bash</span></div>
+<pre><span class="c"># the harness owns the display and waits for it</span>
+dynamo record --display :99 --fps 20 \
+  -- python agent.py
+
+<span class="c"># compile artifacts; survives a crashed agent</span>
+dynamo export ./dynamo-session \
+  --mp4 out/repro.mp4 --crf 23 \
+  --gif out/demo.gif --max-colors 128 --overlay-clicks
+
+dynamo keyframes ./dynamo-session --scene 0.05 \
+  --max-size 1280 --format webp --out out/frames/</pre>
+      </div>
+    </div>
+    <div class="code" style="margin-top:16px">
+      <div class="codecard">
+        <div class="hd"><span>SDK — same capability from Python</span><span>agent.py</span></div>
+<pre><span class="k">from</span> agent_visual_harness <span class="k">import</span> <span class="c">VisualHarness</span>
+
+<span class="k">with</span> <span class="c">VisualHarness</span>(display=<span class="s">":99"</span>, resolution=(<span class="n">1440</span>, <span class="n">900</span>)) <span class="k">as</span> h:
+    h.<span class="c">run_on_display</span>([<span class="s">"python"</span>, <span class="s">"agent.py"</span>])
+    h.<span class="c">log_action</span>(<span class="s">"click"</span>, x=<span class="n">304</span>, y=<span class="n">865</span>, target=<span class="s">"continue to payment"</span>)
+    frame = h.<span class="c">take_screenshot</span>()        <span class="c"># PNG bytes, mid-run</span>
+
+artifacts = h.<span class="c">export</span>(
+    video_path=<span class="s">"out/repro.mp4"</span>,
+    gif_path=<span class="s">"out/demo.gif"</span>,
+    vlm_keyframes_dir=<span class="s">"out/frames/"</span>,
+)
+<span class="c">print</span>(<span class="s">f"Generated {len(artifacts.keyframes)} frames"</span>)</pre>
+      </div>
+      <div class="codecard">
+        <div class="hd"><span>The manifest it writes</span><span>manifest.json</span></div>
+<pre>{
+  <span class="k">"source_size"</span>: {<span class="k">"width"</span>: <span class="n">1440</span>, <span class="k">"height"</span>: <span class="n">900</span>},
+  <span class="k">"duration"</span>: <span class="n">52.1</span>,
+  <span class="k">"raw_frame_estimate"</span>: <span class="n">1042</span>,
+  <span class="k">"scene_frames_detected"</span>: <span class="n">7</span>,
+  <span class="k">"action_anchors"</span>: <span class="n">24</span>,
+  <span class="k">"keyframes_kept"</span>: <span class="n">29</span>,
+  <span class="k">"reduction_pct"</span>: <span class="n">97.22</span>,
+  <span class="k">"keyframes"</span>: [
+    {<span class="k">"index"</span>: <span class="n">1</span>, <span class="k">"timestamp"</span>: <span class="n">0.0</span>, <span class="k">"reason"</span>: <span class="s">"action"</span>,
+     <span class="k">"action"</span>: <span class="s">"type: full name"</span>, <span class="k">"width"</span>: <span class="n">1440</span>}}
+  ]
+}</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="container">
+  <span>Every artifact and number on this page was produced by <code>demo/run_experiments.py</code> on
+  Ubuntu 24.04 / WSL2 · Chromium via Playwright · Xvfb 21.1.12 · ffmpeg 6.1.1 · Python 3.12.
+  The page is generated by <code>demo/build_page.py</code>, so a number here cannot drift from its measurement.</span>
+  <span class="mono">agent_visual_harness 1.1.0 · 402 tests · 256 green without X11 or tesseract</span>
+</footer>
+
+</div>
+</body>
+</html>

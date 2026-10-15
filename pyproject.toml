@@ -1,0 +1,57 @@
+[build-system]
+requires = ["hatchling>=1.18"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agent-visual-harness"
+version = "1.1.0"
+description = "Dynamo — the headless AI Visual & Video Harness for coding agents, browser automation and computer-use sandboxes."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Dynamo" }]
+keywords = [
+  "vlm", "agent", "x11", "xvfb", "ffmpeg", "video", "keyframes", "computer-use",
+  "playwright", "open-weights", "ollama", "qwen3-vl", "visual-regression",
+  "token-budget", "local-inference",
+]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Environment :: X11 Applications",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Multimedia :: Video :: Capture",
+  "Topic :: Software Development :: Testing",
+  "Typing :: Typed",
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4", "pytest-timeout>=2.2"]
+
+[project.urls]
+Homepage = "https://github.com/dynamo-ai/agent-visual-harness"
+Documentation = "https://github.com/dynamo-ai/agent-visual-harness#readme"
+Issues = "https://github.com/dynamo-ai/agent-visual-harness/issues"
+
+[project.scripts]
+dynamo = "agent_visual_harness.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agent_visual_harness"]
+
+[tool.hatch.build.targets.sdist]
+include = ["/src", "/tests", "/scripts", "/README.md"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+markers = [
+  "slow: end-to-end tests that record real video",
+  "xfvb: needs a working Xvfb / X11 display",
+]
+timeout = 300

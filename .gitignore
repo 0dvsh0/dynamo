@@ -1,0 +1,34 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+
+# Session + artifact output
+dynamo-session/
+output/
+*.mp4
+*.webm
+*.gif
+*.webp
+telemetry.jsonl
+meta.json
+display.log
+vlm_frames/
+.vlm_frames/
+*.damaged
+*.palette.png
+
+# Tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# The demo's assets are its *evidence*, not session output: the page cites them
+# and the benchmark reads them. They match the extensions above, so they have to
+# be re-included explicitly rather than by accident.
+!demo/assets/**

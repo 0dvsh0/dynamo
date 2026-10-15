@@ -1,0 +1,922 @@
+{
+  "meta": {
+    "display": "1440x900 Xvfb, headed Chromium",
+    "tokens_per_image_flat": 1100,
+    "tokens_per_megapixel": 765,
+    "page": "Northwind Outfitters \u2014 demo storefront"
+  },
+  "capture": {
+    "region": [
+      205,
+      526,
+      646,
+      102
+    ],
+    "full": {
+      "bytes": 91383,
+      "width": 1440,
+      "height": 900,
+      "megapixels": 1.296,
+      "tokens_flat": 1100,
+      "tokens_sized": 991
+    },
+    "snip": {
+      "bytes": 4256,
+      "width": 646,
+      "height": 102,
+      "megapixels": 0.066,
+      "tokens_flat": 1100,
+      "tokens_sized": 50
+    },
+    "byte_ratio": 0.0466,
+    "token_ratio_flat": 1.0,
+    "tokens_saved": 0,
+    "elapsed_full": 0.318,
+    "elapsed_snip": 0.073,
+    "ground_truth": "Full name\nFull name is required.",
+    "ocr_on_full": "\u00a5 \u2014 @ Northwind Outfitters\u2014 Che x +\n\u20ac G \u00a9 127.0.0.1:8098 * i\n\u201c NorthwindOutfitters Cart @ orders Account signed in as demo@northwind.test\n@ c2@ vaiais 3) Payment @ Review 3) confirmation\nCheckout\nStep 2 of 4 \u2014 shipping and contact details.\nContact Order summary\nEmail\nRidgeline\ndemo@northwind.test MW Hardshell Jacket $189.00\nSlate / M- NW-4471\nr\nTrailhead Merino\nShipping address ial Base Layer $64.00\nHeather /L - NW-2208\nFull name\nAda Lovelace \u2018Summit 30L,\nNw Trekking Pack $142.00\nMoss - NW-9915\nFullname is required .\nStreet address\n{ 18 whart Road ] subtotal $395.00\nStreet address is required, shipping Free\nCity Postal code Estimated tax $34.56\n| Portiana | | 97 ]\nI Total $429.56\nCity is required. Enter a 5-cigit postal code.\nCountry",
+    "ocr_on_snip": "Full name",
+    "needle": "full name",
+    "reads_banner_from_snip": true,
+    "reads_banner_from_full": true,
+    "banner_confidence": 81.3,
+    "full_confidence": 73.8
+  },
+  "ocr": {
+    "page": "gateway console \u2014 log painted to <canvas>",
+    "dom_text_of_canvas": "canvas.textContent = \"\" \u2014 nothing to scrape; pixels only",
+    "dom_has_text": false,
+    "truth_lines": 11,
+    "truth_words": 56,
+    "panel_region": [
+      45,
+      294,
+      1360,
+      470
+    ],
+    "elapsed_full_screen": 0.698,
+    "elapsed_panel": 0.747,
+    "confidence_full": 72.4,
+    "confidence_panel": 75.7,
+    "lines_full": 20,
+    "lines_panel": 12,
+    "score_panel": {
+      "expected": 8,
+      "found_strict": [
+        "DO_NOT_HONOR",
+        "FAILED",
+        "http.status=402",
+        "DECLINED",
+        "4242",
+        "97209"
+      ],
+      "found_folded": [
+        "DO_NOT_HONOR",
+        "7f3c9ab1",
+        "velocity_exceeded",
+        "FAILED",
+        "http.status=402",
+        "DECLINED",
+        "4242",
+        "97209"
+      ],
+      "rescued_by_folding": [
+        "7f3c9ab1",
+        "velocity_exceeded"
+      ],
+      "missed": [],
+      "recall_strict": 0.75,
+      "recall_folded": 1.0
+    },
+    "score_full": {
+      "expected": 8,
+      "found_strict": [
+        "DO_NOT_HONOR",
+        "7f3c9ab1",
+        "FAILED",
+        "http.status=402",
+        "DECLINED",
+        "4242",
+        "97209"
+      ],
+      "found_folded": [
+        "DO_NOT_HONOR",
+        "7f3c9ab1",
+        "velocity_exceeded",
+        "FAILED",
+        "http.status=402",
+        "DECLINED",
+        "4242",
+        "97209"
+      ],
+      "rescued_by_folding": [
+        "velocity_exceeded"
+      ],
+      "missed": [],
+      "recall_strict": 0.875,
+      "recall_folded": 1.0
+    },
+    "word_recall": 0.875,
+    "words_matched": 49,
+    "panel_cost": {
+      "bytes": 146965,
+      "width": 1360,
+      "height": 470,
+      "megapixels": 0.639,
+      "tokens_flat": 1100,
+      "tokens_sized": 489
+    },
+    "full_cost": {
+      "bytes": 197917,
+      "width": 1440,
+      "height": 900,
+      "megapixels": 1.296,
+      "tokens_flat": 1100,
+      "tokens_sized": 991
+    },
+    "decline_line_raw": "09:12:44.201Z issuer.acquirer DECLINED reason=do_not_honor response.code=@5 response.text=Do not honor",
+    "decline_line_truth": "09:12:44.201Z issuer.acquirer DECLINED reason=do_not_honor response.code=05 response.text=Do not honor",
+    "terminal_line_raw": "09:12:44.3102 gateway. txn terminal state=FAILED retryable=false attempt=3 of 3",
+    "terminal_line_truth": "09:12:44.310Z gateway.txn terminal state=FAILED retryable=false attempt=3 of 3",
+    "error_box": [
+      63,
+      580,
+      1118,
+      16
+    ],
+    "sample_text": "NW-OUTFITTERS-4417 - sandbox - 2026-16-14709:12:44Z\n09:12:41.882Z gateway.session client handshake ok proto=h2 cipher=TLS AES 256 GCM\n09:12:42.1042 gateway. route txn 7f3c9abl -> acquirer NORTHWIND SANDBOX pool=primary\n09:12:42.660Z gateway. risk velocity check score=0.91 rule=velocity exceeded\n09:12:43.118Z gateway.avs AVS match=9/9 (exact) postat=97209 expected=97209\n09:12:43.402Z gateway.auth authorization request amount=184.50 currency=USD\n09:12:43.918Z issuer.acquirer auth response received in 516ms network=eu-west-1\n09:12:44.201Z issuer.acquirer DECLINED reason=do_not_honor response.code=@5 response.text=Do not honor\n09:12:44.204Z2 gateway. risk decline. code=D0_ NOT HONOR issuer=CHASE card.brand=VISA last4=4242\n09:12:44.2292 gateway. ledger void auth 000188374 txn=7f3c9abl amount=0.00 refund=none\n09:12:44.3102 gateway. txn terminal state=FAILED retryable=false attempt=3 of 3\n09:12"
+  },
+  "diff": {
+    "full": {
+      "same": false,
+      "width": 1440,
+      "height": 900,
+      "changed_pixels": 5818,
+      "total_pixels": 1296000,
+      "changed_pct": 0.4489,
+      "max_distance": 0.8588,
+      "mean_distance": 0.00169,
+      "threshold": 0.1,
+      "min_changed_pct": 0.05,
+      "region_count": 20,
+      "largest_region": {
+        "box": [
+          618,
+          139,
+          270,
+          19
+        ],
+        "changed_pixels": 1692,
+        "kind": "changed"
+      },
+      "bbox": [
+        222,
+        139,
+        666,
+        649
+      ],
+      "regions": [
+        {
+          "box": [
+            242,
+            139,
+            115,
+            20
+          ],
+          "changed_pixels": 926,
+          "kind": "changed"
+        },
+        {
+          "box": [
+            375,
+            139,
+            31,
+            19
+          ],
+          "changed_pixels": 279,
+          "kind": "changed"
+        },
+        {
+          "box": [
+            440,
+            139,
+            35,
+            7
+          ],
+          "changed_pixels": 100,
+          "kind": "changed"
+        },
+        {
+          "box": [
+            536,
+            139,
+            73,
+            19
+          ],
+          "changed_pixels": 471,
+          "kind": "changed"
+        },
+        {
+          "box": [
+            618,
+            139,
+            270,
+            19
+          ],
+          "changed_pixels": 1692,
+          "kind": "changed"
+        },
+        {
+          "box": [
+            686,
+            139,
+            18,
+            7
+          ],
+          "changed_pixels": 86,
+          "kind": "changed"
+        },
+        {
+          "box": [
+            416,
+            144,
+            112,
+            14
+          ],
+          "changed_pixels": 571,
+          "kind": "changed"
+        },
+        {
+          "box": [
+            569,
+            144,
+            41,
+            5
+          ],
+          "changed_pixels": 93,
+          "kind": "changed"
+        },
+        {
+          "box": [
+            647,
+            144,
+            57,
+            5
+          ],
+          "changed_pixels": 173,
+          "kind": "changed"
+        },
+        {
+          "box": [
+            714,
+            144,
+            94,
+            5
+          ],
+          "changed_pixels": 241,
+          "kind": "changed"
+        },
+        {
+          "box": [
+            818,
+            144,
+            70,
+            5
+          ],
+          "changed_pixels": 153,
+          "kind": "changed"
+        },
+        {
+          "box": [
+            647,
+            150,
+            57,
+            8
+          ],
+          "changed_pixels": 185,
+          "kind": "changed"
+        },
+        {
+          "box": [
+            714,
+            150,
+            94,
+            8
+          ],
+          "changed_pixels": 249,
+          "kind": "changed"
+        },
+        {
+          "box": [
+            818,
+            150,
+            70,
+            3
+          ],
+          "changed_pixels": 129,
+          "kind": "changed"
+        },
+        {
+          "box": [
+            223,
+            365,
+            27,
+            9
+          ],
+          "changed_pixels": 145,
+          "kind": "changed"
+        },
+        {
+          "box": [
+            222,
+            544,
+            56,
+            9
+          ],
+          "changed_pixels": 329,
+          "kind": "changed"
+        },
+        {
+          "box": [
+            222,
+            621,
+            88,
+            9
+          ],
+          "changed_pixels": 495,
+          "kind": "changed"
+        },
+        {
+          "box": [
+            223,
+            699,
+            17,
+            12
+          ],
+          "changed_pixels": 130,
+          "kind": "changed"
+        },
+        {
+          "box": [
+            545,
+            699,
+            70,
+            9
+          ],
+          "changed_pixels": 404,
+          "kind": "changed"
+        },
+        {
+          "box": [
+            223,
+            776,
+            44,
+            12
+          ],
+          "changed_pixels": 277,
+          "kind": "changed"
+        }
+      ],
+      "size_mismatch": null,
+      "verdict": "0.449% of pixels changed (5,818 of 1,296,000, max \u0394 0.859), largest region 270x19 at (618,139)"
+    },
+    "control": {
+      "same": true,
+      "width": 1440,
+      "height": 900,
+      "changed_pixels": 0,
+      "total_pixels": 1296000,
+      "changed_pct": 0.0,
+      "max_distance": 0.0,
+      "mean_distance": 0.0,
+      "threshold": 0.1,
+      "min_changed_pct": 0.05,
+      "region_count": 0,
+      "largest_region": null,
+      "bbox": null,
+      "regions": [],
+      "size_mismatch": null,
+      "verdict": "identical across 1,296,000 pixels (threshold 0.1)"
+    },
+    "field": {
+      "same": false,
+      "width": 630,
+      "height": 62,
+      "changed_pixels": 145,
+      "total_pixels": 39060,
+      "changed_pct": 0.3712,
+      "max_distance": 0.851,
+      "mean_distance": 0.0017,
+      "threshold": 0.1,
+      "min_changed_pct": 0.05,
+      "region_count": 1,
+      "largest_region": {
+        "box": [
+          9,
+          7,
+          27,
+          9
+        ],
+        "changed_pixels": 145,
+        "kind": "changed"
+      },
+      "bbox": [
+        9,
+        7,
+        27,
+        9
+      ],
+      "regions": [
+        {
+          "box": [
+            9,
+            7,
+            27,
+            9
+          ],
+          "changed_pixels": 145,
+          "kind": "changed"
+        }
+      ],
+      "size_mismatch": null,
+      "verdict": "0.371% of pixels changed (145 of 39,060, max \u0394 0.851), largest region 27x9 at (9,7)"
+    },
+    "field_region": [
+      214,
+      358,
+      630,
+      62
+    ],
+    "regions": [
+      {
+        "box": [
+          242,
+          139,
+          115,
+          20
+        ],
+        "changed_pixels": 926,
+        "kind": "changed"
+      },
+      {
+        "box": [
+          375,
+          139,
+          31,
+          19
+        ],
+        "changed_pixels": 279,
+        "kind": "changed"
+      },
+      {
+        "box": [
+          440,
+          139,
+          35,
+          7
+        ],
+        "changed_pixels": 100,
+        "kind": "changed"
+      },
+      {
+        "box": [
+          536,
+          139,
+          73,
+          19
+        ],
+        "changed_pixels": 471,
+        "kind": "changed"
+      },
+      {
+        "box": [
+          618,
+          139,
+          270,
+          19
+        ],
+        "changed_pixels": 1692,
+        "kind": "changed"
+      },
+      {
+        "box": [
+          686,
+          139,
+          18,
+          7
+        ],
+        "changed_pixels": 86,
+        "kind": "changed"
+      },
+      {
+        "box": [
+          416,
+          144,
+          112,
+          14
+        ],
+        "changed_pixels": 571,
+        "kind": "changed"
+      },
+      {
+        "box": [
+          569,
+          144,
+          41,
+          5
+        ],
+        "changed_pixels": 93,
+        "kind": "changed"
+      },
+      {
+        "box": [
+          647,
+          144,
+          57,
+          5
+        ],
+        "changed_pixels": 173,
+        "kind": "changed"
+      },
+      {
+        "box": [
+          714,
+          144,
+          94,
+          5
+        ],
+        "changed_pixels": 241,
+        "kind": "changed"
+      },
+      {
+        "box": [
+          818,
+          144,
+          70,
+          5
+        ],
+        "changed_pixels": 153,
+        "kind": "changed"
+      },
+      {
+        "box": [
+          647,
+          150,
+          57,
+          8
+        ],
+        "changed_pixels": 185,
+        "kind": "changed"
+      }
+    ],
+    "region_count": 20,
+    "large_regions": 12,
+    "verdict": "0.449% of pixels changed (5,818 of 1,296,000, max \u0394 0.859), largest region 270x19 at (618,139)",
+    "elapsed": 0.554,
+    "css_injected": [
+      ".steps li + li { margin-left: 26px; }",
+      ".field label { letter-spacing: 0.04em; }",
+      ".summary { padding: 18px 22px; }"
+    ]
+  },
+  "grounding": {
+    "marks": 17,
+    "targets": 17,
+    "skipped": 0,
+    "skipped_detail": [],
+    "clipped_at_top": 0,
+    "clipped_at_top_detail": [],
+    "screenshot_cost": {
+      "bytes": 87464,
+      "width": 1440,
+      "height": 900,
+      "megapixels": 1.296,
+      "tokens_flat": 1100,
+      "tokens_sized": 991
+    },
+    "annotated_cost": {
+      "bytes": 91536,
+      "width": 1440,
+      "height": 900,
+      "megapixels": 1.296,
+      "tokens_flat": 1100,
+      "tokens_sized": 991
+    },
+    "legend": "  1  NorthwindOutfitters  <a>\n  2  Cart  <a>\n  3  Orders  <a>\n  4  Account  <a>\n  5  Email  <div>\n  6  email  <input>\n  7  Full name  <div>\n  8  name  <input>\n  9  Street address  <div>\n 10  line1  <input>\n 11  City  <div>\n 12  city  <input>\n 13  Postal code  <div>\n 14  zip  <input>\n 15  Country  <div>\n 16  Continue to payment  <button>\n 17  Back to cart  <button>",
+    "prompt": "This screenshot has interactive elements outlined and numbered 1-17.\n\nIdentify which numbered element you want by replying with only the number.\n\nWhich element continues to payment?",
+    "answer": 16,
+    "target_label": "Continue to payment",
+    "resolved_point": [
+      305,
+      781
+    ],
+    "resolved_point_image": [
+      305,
+      866
+    ],
+    "resolved_box": [
+      214,
+      762,
+      182,
+      38
+    ],
+    "device_box": [
+      214,
+      847,
+      182,
+      38
+    ],
+    "space_offset": [
+      0,
+      85
+    ],
+    "dom_point": [
+      305,
+      866
+    ],
+    "dom_box": [
+      214,
+      847,
+      182,
+      38
+    ],
+    "viewport_origin": [
+      0,
+      85
+    ],
+    "scale": "origin 0,85",
+    "targets_json": [
+      {
+        "index": 1,
+        "box": [
+          191,
+          14,
+          172,
+          24
+        ],
+        "label": "NorthwindOutfitters",
+        "role": "a",
+        "disabled": false
+      },
+      {
+        "index": 2,
+        "box": [
+          798,
+          16,
+          54,
+          21
+        ],
+        "label": "Cart",
+        "role": "a",
+        "disabled": false
+      },
+      {
+        "index": 3,
+        "box": [
+          874,
+          16,
+          43,
+          21
+        ],
+        "label": "Orders",
+        "role": "a",
+        "disabled": false
+      },
+      {
+        "index": 4,
+        "box": [
+          939,
+          16,
+          51,
+          21
+        ],
+        "label": "Account",
+        "role": "a",
+        "disabled": false
+      },
+      {
+        "index": 5,
+        "box": [
+          214,
+          271,
+          630,
+          62
+        ],
+        "label": "Email",
+        "role": "div",
+        "disabled": false
+      },
+      {
+        "index": 6,
+        "box": [
+          214,
+          296,
+          630,
+          36
+        ],
+        "label": "email",
+        "role": "input",
+        "disabled": false
+      },
+      {
+        "index": 7,
+        "box": [
+          214,
+          450,
+          630,
+          62
+        ],
+        "label": "Full name",
+        "role": "div",
+        "disabled": false
+      },
+      {
+        "index": 8,
+        "box": [
+          214,
+          475,
+          630,
+          36
+        ],
+        "label": "name",
+        "role": "input",
+        "disabled": false
+      },
+      {
+        "index": 9,
+        "box": [
+          214,
+          527,
+          630,
+          62
+        ],
+        "label": "Street address",
+        "role": "div",
+        "disabled": false
+      },
+      {
+        "index": 10,
+        "box": [
+          214,
+          553,
+          630,
+          36
+        ],
+        "label": "line1",
+        "role": "input",
+        "disabled": false
+      },
+      {
+        "index": 11,
+        "box": [
+          214,
+          605,
+          307,
+          62
+        ],
+        "label": "City",
+        "role": "div",
+        "disabled": false
+      },
+      {
+        "index": 12,
+        "box": [
+          214,
+          630,
+          307,
+          36
+        ],
+        "label": "city",
+        "role": "input",
+        "disabled": false
+      },
+      {
+        "index": 13,
+        "box": [
+          537,
+          605,
+          307,
+          62
+        ],
+        "label": "Postal code",
+        "role": "div",
+        "disabled": false
+      },
+      {
+        "index": 14,
+        "box": [
+          537,
+          630,
+          307,
+          36
+        ],
+        "label": "zip",
+        "role": "input",
+        "disabled": false
+      },
+      {
+        "index": 15,
+        "box": [
+          214,
+          682,
+          630,
+          64
+        ],
+        "label": "Country",
+        "role": "div",
+        "disabled": false
+      },
+      {
+        "index": 16,
+        "box": [
+          214,
+          762,
+          182,
+          38
+        ],
+        "label": "Continue to payment",
+        "role": "button",
+        "disabled": false
+      },
+      {
+        "index": 17,
+        "box": [
+          408,
+          762,
+          121,
+          38
+        ],
+        "label": "Back to cart",
+        "role": "button",
+        "disabled": false
+      }
+    ]
+  },
+  "hidpi": {
+    "device_pixel_ratio": 2,
+    "css_box_1x": [
+      45,
+      243,
+      144,
+      35
+    ],
+    "css_point_1x": [
+      117,
+      260
+    ],
+    "dom_box_2x": [
+      89,
+      316,
+      287,
+      70
+    ],
+    "ocr_label_box_2x": [
+      202,
+      336,
+      140,
+      23
+    ],
+    "ocr_dom_agreement_px": [
+      113,
+      20
+    ],
+    "ocr_confidence_2x": 83.3,
+    "ocr_elapsed_2x": 1.237,
+    "ocr_lines_2x": 18,
+    "naive_point_2x": [
+      272,
+      347
+    ],
+    "fixed_point_2x": [
+      136,
+      174
+    ],
+    "drift_px": [
+      136,
+      173
+    ],
+    "naive_click_landed": false,
+    "fixed_click_landed": true,
+    "image_size_2x": [
+      2880,
+      1600
+    ],
+    "retina_note": "2880x1600 image vs 1440x800 pointer space",
+    "scale": "\u00d72"
+  },
+  "assets": [
+    "capture_full.png",
+    "capture_snip.png",
+    "diff_after.png",
+    "diff_before.png",
+    "diff_field.png",
+    "diff_overlay.png",
+    "hidpi_2x_page.png",
+    "hidpi_fixed_click.png",
+    "hidpi_naive_click.png",
+    "ocr_error_box.png",
+    "ocr_page.png",
+    "ocr_panel.png",
+    "som_screen.png"
+  ]
+}

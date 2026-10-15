@@ -1,0 +1,14 @@
+# Store text as LF so the repository reads the same on every checkout, and mark
+# the media as binary so nothing tries to diff or mangle a GIF.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.mp4 binary
+*.webm binary
+*.ico binary
+*.woff binary
+*.woff2 binary

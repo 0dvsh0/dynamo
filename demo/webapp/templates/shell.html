@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Northwind Outfitters — Checkout</title>
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<header class="site">
+  <div class="bar">
+    <a class="logo" href="/">
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+        <path d="M3 17 9 4l3 6 3-6 6 13z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+      </svg>
+      <span>Northwind<em>Outfitters</em></span>
+    </a>
+    <nav class="nav">
+      <a href="/cart">Cart <span class="pill-count" id="cart-count">3</span></a>
+      <a href="/orders">Orders</a>
+      <a href="/account">Account</a>
+    </nav>
+    <div class="account">signed in as <strong>demo@northwind.test</strong></div>
+  </div>
+  <ol class="steps" id="steps">
+    <li data-step="cart" class="done">Cart</li>
+    <li data-step="details" class="current">Details</li>
+    <li data-step="payment">Payment</li>
+    <li data-step="review">Review</li>
+    <li data-step="done">Confirmation</li>
+  </ol>
+</header>
+
+<main class="page">
+  <div id="view"></div>
+</main>
+
+<footer class="site-foot">
+  <span>Northwind Outfitters · demo store</span>
+  <span id="build">build 2026.10.14-a91f2c</span>
+</footer>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

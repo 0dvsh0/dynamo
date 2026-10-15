@@ -1,0 +1,287 @@
+{
+  "version": 1,
+  "generator": "agent_visual_harness",
+  "source_video": "/tmp/dynamo-demo/session/raw.mp4",
+  "session_dir": null,
+  "source_size": {
+    "width": 1440,
+    "height": 900
+  },
+  "duration": 52.1,
+  "raw_frame_estimate": 1042,
+  "config": {
+    "scene_threshold": 0.05,
+    "max_size": 1280,
+    "format": "webp",
+    "quality": 82,
+    "min_gap": 0.3,
+    "max_frames": null
+  },
+  "scene_frames_detected": 7,
+  "action_anchors": 24,
+  "keyframes_kept": 29,
+  "reduction_pct": 97.22,
+  "keyframes": [
+    {
+      "index": 1,
+      "path": "frame_0001.webp",
+      "timestamp": 2.013,
+      "reason": "action",
+      "action": "type: full name",
+      "width": 1280,
+      "height": 800
+    },
+    {
+      "index": 2,
+      "path": "frame_0002.webp",
+      "timestamp": 3.597,
+      "reason": "action",
+      "action": "type: street address",
+      "width": 1280,
+      "height": 800
+    },
+    {
+      "index": 3,
+      "path": "frame_0003.webp",
+      "timestamp": 5.068,
+      "reason": "action",
+      "action": "type: city",
+      "width": 1280,
+      "height": 800
+    },
+    {
+      "index": 4,
+      "path": "frame_0004.webp",
+      "timestamp": 6.419,
+      "reason": "action",
+      "action": "type: postal code",
+      "width": 1280,
+      "height": 800
+    },
+    {
+      "index": 5,
+      "path": "frame_0005.webp",
+      "timestamp": 8.455,
+      "reason": "action",
+      "action": "click: continue to payment",
+      "width": 1280,
+      "height": 800
+    },
+    {
+      "index": 6,
+      "path": "frame_0006.webp",
+      "timestamp": 10.168,
+      "reason": "action",
+      "action": "validation error: postal code rejected",
+      "width": 1280,
+      "height": 800
+    },
+    {
+      "index": 7,
+      "path": "frame_0007.webp",
+      "timestamp": 11.477,
+      "reason": "action",
+      "action": "fix: postal code",
+      "width": 1280,
+      "height": 800
+    },
+    {
+      "index": 8,
+      "path": "frame_0008.webp",
+      "timestamp": 13.26,
+      "reason": "action",
+      "action": "click: continue to payment",
+      "width": 1280,
+      "height": 800
+    },
+    {
+      "index": 9,
+      "path": "frame_0009.webp",
+      "timestamp": 14.6,
+      "reason": "scene",
+      "action": null,
+      "width": 1280,
+      "height": 800
+    },
+    {
+      "index": 10,
+      "path": "frame_0010.webp",
+      "timestamp": 15.272,
+      "reason": "action",
+      "action": "reached payment step",
+      "width": 1280,
+      "height": 800
+    },
+    {
+      "index": 11,
+      "path": "frame_0011.webp",
+      "timestamp": 16.941,
+      "reason": "action",
+      "action": "type: card number",
+      "width": 1280,
+      "height": 800
+    },
+    {
+      "index": 12,
+      "path": "frame_0012.webp",
+      "timestamp": 19.149,
+      "reason": "action",
+      "action": "type: name on card",
+      "width": 1280,
+      "height": 800
+    },
+    {
+      "index": 13,
+      "path": "frame_0013.webp",
+      "timestamp": 21.098,
+      "reason": "action",
+      "action": "type: expiry",
+      "width": 1280,
+      "height": 800
+    },
+    {
+      "index": 14,
+      "path": "frame_0014.webp",
+      "timestamp": 22.932,
+      "reason": "action",
+      "action": "type: cvc",
+      "width": 1280,
+      "height": 800
+    },
+    {
+      "index": 15,
+      "path": "frame_0015.webp",
+      "timestamp": 24.886,
+      "reason": "action",
+      "action": "click: pay (attempt 1)",
+      "width": 1280,
+      "height": 800
+    },
+    {
+      "index": 16,
+      "path": "frame_0016.webp",
+      "timestamp": 27.293,
+      "reason": "action",
+      "action": "waiting on issuer (attempt 1)",
+      "width": 1280,
+      "height": 800
+    },
+    {
+      "index": 17,
+      "path": "frame_0017.webp",
+      "timestamp": 28.85,
+      "reason": "scene",
+      "action": null,
+      "width": 1280,
+      "height": 800
+    },
+    {
+      "index": 18,
+      "path": "frame_0018.webp",
+      "timestamp": 30.104,
+      "reason": "action",
+      "action": "issuer declined (attempt 1)",
+      "width": 1280,
+      "height": 800
+    },
+    {
+      "index": 19,
+      "path": "frame_0019.webp",
+      "timestamp": 31.456,
+      "reason": "action",
+      "action": "click: pay (attempt 2)",
+      "width": 1280,
+      "height": 800
+    },
+    {
+      "index": 20,
+      "path": "frame_0020.webp",
+      "timestamp": 32.6,
+      "reason": "scene",
+      "action": null,
+      "width": 1280,
+      "height": 800
+    },
+    {
+      "index": 21,
+      "path": "frame_0021.webp",
+      "timestamp": 33.861,
+      "reason": "action",
+      "action": "waiting on issuer (attempt 2)",
+      "width": 1280,
+      "height": 800
+    },
+    {
+      "index": 22,
+      "path": "frame_0022.webp",
+      "timestamp": 36.669,
+      "reason": "action",
+      "action": "issuer declined (attempt 2)",
+      "width": 1280,
+      "height": 800
+    },
+    {
+      "index": 23,
+      "path": "frame_0023.webp",
+      "timestamp": 38.016,
+      "reason": "action",
+      "action": "click: pay (attempt 3)",
+      "width": 1280,
+      "height": 800
+    },
+    {
+      "index": 24,
+      "path": "frame_0024.webp",
+      "timestamp": 40.419,
+      "reason": "action",
+      "action": "waiting on issuer (attempt 3)",
+      "width": 1280,
+      "height": 800
+    },
+    {
+      "index": 25,
+      "path": "frame_0025.webp",
+      "timestamp": 41.95,
+      "reason": "scene",
+      "action": null,
+      "width": 1280,
+      "height": 800
+    },
+    {
+      "index": 26,
+      "path": "frame_0026.webp",
+      "timestamp": 43.227,
+      "reason": "action",
+      "action": "payment captured",
+      "width": 1280,
+      "height": 800
+    },
+    {
+      "index": 27,
+      "path": "frame_0027.webp",
+      "timestamp": 45.161,
+      "reason": "action",
+      "action": "click: place order",
+      "width": 1280,
+      "height": 800
+    },
+    {
+      "index": 28,
+      "path": "frame_0028.webp",
+      "timestamp": 48.274,
+      "reason": "action",
+      "action": "order confirmed",
+      "width": 1280,
+      "height": 800
+    },
+    {
+      "index": 29,
+      "path": "frame_0029.webp",
+      "timestamp": 51.95,
+      "reason": "scene",
+      "action": null,
+      "width": 1280,
+      "height": 800
+    }
+  ]
+}
