@@ -956,7 +956,16 @@ class Triage:
         question: str,
         *,
         timeout: float | None = None,
+        on_answer: Callable[[Answer, int, int], None] | None = None,
     ) -> Report:
+        """Answer the question about every frame, as cheaply as each allows.
+
+        ``on_answer`` is called with ``(answer, index, total)`` after each frame.
+        It exists because the honest version of this is slow: a 4B model on a CPU
+        takes tens of seconds a frame, and a caller watching a terminal for an
+        hour needs to see which frame it is on. Nothing passed here can change the
+        result.
+        """
         report = Report(
             question=question,
             frames=len(frames),
@@ -967,8 +976,9 @@ class Triage:
             },
         )
         started = time.monotonic()
+        total = len(frames)
 
-        for frame in frames:
+        for index, frame in enumerate(frames, start=1):
             answer = self._one(frame, question, timeout=timeout)
             report.answers.append(answer)
             report.tokens_before += answer.tokens_before
@@ -978,13 +988,16 @@ class Triage:
                 report.filter_calls += 1
             if answer.skipped:
                 report.skipped += 1
-                continue
-            report.answered += 1
-            report.model_calls += 1
-            if answer.cropped:
-                report.cropped += 1
-            if answer.escalated:
-                report.escalated += 1
+            else:
+                report.answered += 1
+                report.model_calls += 1
+                if answer.cropped:
+                    report.cropped += 1
+                if answer.escalated:
+                    report.escalated += 1
+
+            if on_answer is not None:
+                on_answer(answer, index, total)
 
         report.elapsed = time.monotonic() - started
         return report

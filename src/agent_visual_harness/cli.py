@@ -360,16 +360,24 @@ def cmd_triage(args: argparse.Namespace) -> int:
         skip_unchanged=not args.keep_all,
         filter_threshold=args.threshold,
     )
-    report = triage.run(frames, args.question)
-    print(report.summary())
 
-    if args.verbose:
-        for answer in report.answers:
-            state = f"skipped: {answer.skipped_reason}" if answer.skipped else (
-                answer.text[:60] or "(empty answer)"
-            )
-            print(f"  {answer.frame:<18} {answer.tokens_before:>6} → "
-                  f"{answer.tokens_after:>6} tok  {state}")
+    def announce(answer, index: int, total: int) -> None:
+        state = (
+            f"skipped: {answer.skipped_reason}"
+            if answer.skipped
+            else (answer.text[:60] or "(empty answer)")
+        )
+        print(
+            f"  [{index:>3}/{total}] {answer.frame:<20} "
+            f"{answer.tokens_before:>6} → {answer.tokens_after:>6} tok  "
+            f"{state}",
+            flush=True,
+        )
+
+    report = triage.run(
+        frames, args.question, on_answer=announce if args.verbose else None
+    )
+    print(report.summary())
 
     if args.out:
         Path(args.out).write_text(

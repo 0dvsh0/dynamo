@@ -45,6 +45,17 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent
 
+# Windows consoles default to cp1252 and cannot encode the arrows in the progress
+# lines. Reconfigure before anything is printed, or a long run dies on its own
+# output — which is a spectacularly annoying way to lose an hour of inference.
+for _stream in (sys.stdout, sys.stderr):
+    _reconfigure = getattr(_stream, "reconfigure", None)
+    if _reconfigure is not None:
+        try:
+            _reconfigure(encoding="utf-8", errors="replace")
+        except (ValueError, OSError):  # pragma: no cover - detached stream
+            pass
+
 sys.path.insert(0, str(REPO / "src"))
 
 from agent_visual_harness import (  # noqa: E402
@@ -116,7 +127,7 @@ def probe_backends(model: str, ollama_endpoint: str, laya_endpoint: str) -> tupl
 
 
 def run_config(name: str, frames: list[Frame], *, primary, filter_backend, crop: bool,
-               skip_unchanged: bool) -> tuple[dict, list[dict]]:
+               skip_unchanged: bool, progress: bool = True) -> tuple[dict, list[dict]]:
     """Run one configuration over the frames and return its numbers."""
     triage = Triage(
         primary,
@@ -126,8 +137,20 @@ def run_config(name: str, frames: list[Frame], *, primary, filter_backend, crop:
         filter_threshold=FILTER_THRESHOLD,
         min_region_px=MIN_REGION_PX,
     )
+
+    def announce(answer, index: int, total: int) -> None:
+        # A 4B VLM on a CPU is tens of seconds a frame. Without this the run is
+        # an hour of silence, and silence is indistinguishable from a hang.
+        if answer.skipped:
+            what = f"skipped — {answer.skipped_reason}"
+        else:
+            what = f"{answer.tokens_before:>6} → {answer.tokens_after:>6} tok"
+            what += ", cropped" if answer.cropped else "        "
+            what += f", {answer.elapsed:5.1f}s"
+        print(f"  [{index:>3}/{total}] {answer.frame:<20} {what}", flush=True)
+
     started = time.monotonic()
-    report = triage.run(frames, QUESTION)
+    report = triage.run(frames, QUESTION, on_answer=announce if progress else None)
     wall = time.monotonic() - started
 
     payload = report.to_dict()
@@ -190,6 +213,8 @@ def main(argv: list[str] | None = None) -> int:
                              "screen text instead of only the action label")
     parser.add_argument("--stub", action="store_true",
                         help="run the pipeline without a model; writes measured: false")
+    parser.add_argument("--quiet", action="store_true",
+                        help="do not print a line per frame")
     args = parser.parse_args(argv)
 
     out = Path(args.out)
@@ -270,6 +295,7 @@ def main(argv: list[str] | None = None) -> int:
             filter_backend=filter_for() if spec["use_filter"] else None,
             crop=spec["crop"],
             skip_unchanged=spec["skip_unchanged"],
+            progress=not args.quiet,
         )
         workflows[name] = payload
         if name == "triaged":

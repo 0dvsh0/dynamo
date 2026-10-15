@@ -31,7 +31,7 @@
     "ocr": {
       "available": false,
       "used": false,
-      "load_seconds": 9.291,
+      "load_seconds": 9.452,
       "frames_with_text": 0,
       "max_state_chars": 1200
     },
@@ -486,7 +486,7 @@
       "tokens_before": 22707,
       "tokens_after": 11008,
       "token_ratio": 0.4848,
-      "elapsed": 1.091,
+      "elapsed": 1.07,
       "backends": {
         "primary": {
           "name": "stub-primary",
@@ -1004,9 +1004,9 @@
           "skipped_reason": null
         }
       ],
-      "wall_seconds": 1.091,
+      "wall_seconds": 1.07,
       "name": "cropped",
-      "summary": "question  What went wrong on this screen, and which step of the checkout does it belong to? Answer in one sentence.\nframes    29\nsent      29 to a generative model (29 answered, 0 never sent)\ncropped   20 frames before sending\ntokens    22,707 -> 11,008 (48.5% of sending every frame whole)\nelapsed   1.09s"
+      "summary": "question  What went wrong on this screen, and which step of the checkout does it belong to? Answer in one sentence.\nframes    29\nsent      29 to a generative model (29 answered, 0 never sent)\ncropped   20 frames before sending\ntokens    22,707 -> 11,008 (48.5% of sending every frame whole)\nelapsed   1.07s"
     },
     "triaged": {
       "question": "What went wrong on this screen, and which step of the checkout does it belong to? Answer in one sentence.",
@@ -1021,7 +1021,7 @@
       "tokens_before": 22707,
       "tokens_after": 11008,
       "token_ratio": 0.4848,
-      "elapsed": 1.064,
+      "elapsed": 1.035,
       "backends": {
         "primary": {
           "name": "stub-primary",
@@ -1543,9 +1543,9 @@
           "skipped_reason": null
         }
       ],
-      "wall_seconds": 1.064,
+      "wall_seconds": 1.035,
       "name": "triaged",
-      "summary": "question  What went wrong on this screen, and which step of the checkout does it belong to? Answer in one sentence.\nframes    29\nsent      29 to a generative model (29 answered, 0 never sent)\nfilter    29 frames scored\ncropped   20 frames before sending\ntokens    22,707 -> 11,008 (48.5% of sending every frame whole)\nelapsed   1.06s"
+      "summary": "question  What went wrong on this screen, and which step of the checkout does it belong to? Answer in one sentence.\nframes    29\nsent      29 to a generative model (29 answered, 0 never sent)\nfilter    29 frames scored\ncropped   20 frames before sending\ntokens    22,707 -> 11,008 (48.5% of sending every frame whole)\nelapsed   1.03s"
     }
   },
   "headline": {
