@@ -64,6 +64,18 @@ class TestParser:
         assert exc.value.code == 0
         assert "dynamo" in capsys.readouterr().out
 
+    def test_version_short_flag(self, capsys):
+        with pytest.raises(SystemExit) as exc:
+            main(["-V"])
+        assert exc.value.code == 0
+        assert "dynamo" in capsys.readouterr().out
+
+    def test_license_flag(self, capsys):
+        assert main(["--license"]) == 0
+        out = capsys.readouterr().out
+        assert "MIT License" in out
+        assert "Devansh" in out
+
     @pytest.mark.parametrize("command", ["record", "export", "keyframes", "info", "triage"])
     def test_subcommand_help(self, command, capsys):
         with pytest.raises(SystemExit) as exc:
