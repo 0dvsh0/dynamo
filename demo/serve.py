@@ -41,10 +41,24 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         """Quiet: the agent's own telemetry is the interesting log."""
 
 
+class Threaded(socketserver.ThreadingTCPServer):
+    """The storefront has to handle connections at the same time.
+
+    A browser opens several connections to render one page — the document, its
+    stylesheets, its script — and Playwright's second browser context, used for
+    the HiDPI experiment, opens more on top. A plain ``TCPServer`` handles one
+    connection at a time, so those queue behind each other and a navigation waits
+    until it times out. Every real HTTP server is threaded for exactly this
+    reason; the demo only looked like it worked by luck.
+    """
+
+    daemon_threads = True
+    allow_reuse_address = True
+
+
 def serve(port: int = 8099, host: str = "127.0.0.1") -> socketserver.TCPServer:
     handler = functools.partial(Handler, directory=str(WEBAPP))
-    socketserver.TCPServer.allow_reuse_address = True
-    httpd = socketserver.TCPServer((host, port), handler)
+    httpd = Threaded((host, port), handler)
     thread = threading.Thread(target=httpd.serve_forever, daemon=True)
     thread.start()
     return httpd

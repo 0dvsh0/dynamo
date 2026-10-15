@@ -393,11 +393,20 @@ def check_readme(problems: list[str]) -> None:
         for key, got, want in zip(columns, found, wanted):
             if want is None:
                 continue
-            if got != want:
-                problems.append(
-                    f"README says '{label}' for {key} is {got}, the measurement says "
-                    f"{want}"
-                )
+            if got == want:
+                continue
+            # Compare as numbers when both are numbers, so prose can write
+            # "11.6" where the data says 11.6 without tripping over the fact
+            # that one of them is not padded to two places.
+            try:
+                if abs(float(got.replace(",", "")) - float(str(want).replace(",", ""))) < 5e-3:
+                    continue
+            except ValueError:
+                pass
+            problems.append(
+                f"README says '{label}' for {key} is {got}, the measurement says "
+                f"{want}"
+            )
 
     expect("images to the model", [str(data[k].get("images")) for k in columns])
     expect("visual tokens", [f"{data[k].get('tokens', 0):,}" for k in columns])

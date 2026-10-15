@@ -723,16 +723,20 @@ def main(argv: list[str] | None = None) -> int:
     if manifest.exists():
         shutil.copy2(manifest, assets / "manifest.json")
 
-    # The gallery the page leads with: the real decoded frame at each logged action.
-    if playable(assets / "dynamo_repro.mp4")[0] and (assets / "telemetry.jsonl").exists():
-        results["stills"] = extract_stills(assets / "dynamo_repro.mp4",
-                                           assets / "telemetry.jsonl", assets / "stills")
-
+    # Telemetry has to land in assets/ before anything reads it from there. The
+    # gallery below samples assets/telemetry.jsonl, and on a clean run that file
+    # does not exist yet — so the gallery came out silently empty, and only ever
+    # looked right because a previous run had left one behind.
     for key, field, name in (("dynamo", "telemetry", "telemetry.jsonl"),
                              ("crash", "telemetry", "telemetry_crash.jsonl")):
         source = results.get(key, {}).get(field)
         if source and Path(source).exists():
             shutil.copy2(source, assets / name)
+
+    # The gallery the page leads with: the real decoded frame at each logged action.
+    if playable(assets / "dynamo_repro.mp4")[0] and (assets / "telemetry.jsonl").exists():
+        results["stills"] = extract_stills(assets / "dynamo_repro.mp4",
+                                           assets / "telemetry.jsonl", assets / "stills")
 
     crash_raw = results.get("crash", {}).get("raw")
     if crash_raw and Path(crash_raw).exists():

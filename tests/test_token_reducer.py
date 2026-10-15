@@ -21,6 +21,68 @@ def _reduce(clip: Path, out: Path, actions=(), **config) -> tuple[list, Path]:
     return frames, out / "manifest.json"
 
 
+class TestExtractionBeyondTheEnd:
+    """An action logged after the last frame exists must not become a keyframe.
+
+    The telemetry runs on the wall clock while the video stops when the
+    recorder finalises, so the final action can carry a timestamp past the end
+    of the clip. ffmpeg answers that seek with an 8-byte stub and a zero exit
+    code, and a stub that exists is worse than a missing frame: every later
+    stage counts it until something finally tries to decode it. This is not
+    hypothetical — it shipped an 8-byte frame_0028.webp that took the whole
+    model benchmark down with an "unrecognised image format" error.
+    """
+
+    def test_a_seek_past_the_end_still_yields_a_real_frame(self, tmp_path: Path):
+        clip = make_clip(tmp_path / "short.mp4", fps=10, seconds_per_colour=0.5)
+        reducer = TokenReducer(config=ReducerConfig(fmt="jpeg"))
+
+        got = reducer.extract_at(clip, 99.0, tmp_path / "out.jpg", (640, 480))
+
+        assert got is not None, "clamping should keep the anchor, not drop it"
+        data = got.read_bytes()
+        assert data[:2] == b"\xff\xd8", "the file must actually be a JPEG"
+        # Not a byte count: a flat colour compresses to a genuinely small JPEG.
+        # What matters is that it has the dimensions of a real frame.
+        from agent_visual_harness import image_size
+
+        assert image_size(data) == (640, 480)
+
+    def test_a_stub_ffmpeg_wrote_is_rejected(self, tmp_path: Path, monkeypatch):
+        clip = make_clip(tmp_path / "short.mp4", fps=10, seconds_per_colour=0.5)
+        out = tmp_path / "stub.webp"
+        reducer = TokenReducer(config=ReducerConfig(fmt="webp"))
+
+        def fake_run(cmd, **kwargs):
+            # Exactly what ffmpeg leaves behind when the seek overshoots.
+            out.write_bytes(b"\x00\x00\x00\x00\xf8\xff\xff\xff")
+            return None
+
+        monkeypatch.setattr("agent_visual_harness.token_reducer.run", fake_run)
+
+        assert reducer.extract_at(clip, 1.0, out, (640, 480)) is None
+        assert not out.exists(), "the stub must be removed, not left for the next stage"
+
+    def test_the_duration_is_probed_once_not_per_frame(self, tmp_path: Path, monkeypatch):
+        clip = make_clip(tmp_path / "short.mp4", fps=10, seconds_per_colour=0.5)
+        reducer = TokenReducer(config=ReducerConfig(fmt="jpeg"))
+        calls: list[str] = []
+        real_probe = reducer.info_of
+
+        def counting_probe(video):
+            calls.append(str(video))
+            return real_probe(video)
+
+        monkeypatch.setattr(reducer, "info_of", counting_probe)
+        for index in range(4):
+            reducer.extract_at(clip, index * 0.2, tmp_path / f"f{index}.jpg", (640, 480))
+
+        # Once per clip, not once per frame: the extractions are the expensive
+        # part and ffprobe is not free.
+        assert reducer._info, "the probe result should have been cached"
+        assert len(calls) == 4
+
+
 class TestConfigValidation:
     def test_rejects_unknown_format(self):
         with pytest.raises(ProcessingError, match="unknown keyframe format"):

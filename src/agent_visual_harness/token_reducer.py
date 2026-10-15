@@ -25,6 +25,7 @@ from pathlib import Path
 from collections.abc import Sequence
 
 from ._ffmpeg import FFMPEG, has_encoder, probe, run, vfr_flag
+from .capture import image_size
 from .errors import ProcessingError
 from .processor import Processor, parse_showinfo_times
 from .types import Action, Keyframe, Resolution
@@ -88,6 +89,26 @@ class TokenReducer:
     def __init__(self, ffmpeg: str = FFMPEG, config: ReducerConfig | None = None) -> None:
         self.ffmpeg = ffmpeg
         self.config = (config or ReducerConfig()).normalised()
+        self._info: dict[str, object] = {}
+
+    def info_of(self, video: Path | str):
+        """Probed stream metadata for ``video``, read once and remembered.
+
+        Cached because the reducer extracts every frame from the same clip, and
+        one ffprobe per frame would cost more than the extractions themselves.
+        """
+        key = str(video)
+        if key not in self._info:
+            try:
+                self._info[key] = probe(key)
+            except Exception:  # noqa: BLE001 - no ffprobe means no clamp, as before
+                self._info[key] = None
+        return self._info[key]
+
+    def duration_of(self, video: Path | str) -> float:
+        """Seconds in ``video``, or 0.0 when it cannot be read."""
+        info = self.info_of(video)
+        return float(getattr(info, "duration", 0.0) or 0.0) if info else 0.0
 
     # ------------------------------------------------------------------ scale
 
@@ -178,6 +199,24 @@ class TokenReducer:
         out_path.parent.mkdir(parents=True, exist_ok=True)
         encoder_args = list(FRAME_FORMATS[self.config.fmt]["encoder_arg"])
         scale = self.scale_filter(source_size)
+
+        # An action can be logged a moment after the last frame exists: the
+        # telemetry runs on the wall clock, while the video stops the instant
+        # the recorder finalises. Seeking past the end makes ffmpeg write an
+        # 8-byte stub and still exit successfully, and a stub that exists is
+        # worse than a missing frame — everything downstream treats it as one
+        # until something finally tries to decode it.
+        #
+        # The clamp backs off by one frame interval rather than by an arbitrary
+        # epsilon: the last frame of a 10fps clip is stamped at duration minus
+        # 0.1s, so clamping to duration minus 0.05s still finds nothing.
+        info = self.info_of(video)
+        duration = float(getattr(info, "duration", 0.0) or 0.0) if info else 0.0
+        if duration > 0:
+            fps = float(getattr(info, "fps", 0.0) or 0.0) if info else 0.0
+            step = 1.0 / fps if fps > 0 else 0.05
+            timestamp = min(timestamp, max(0.0, duration - step))
+
         cmd = [
             self.ffmpeg, "-hide_banner", "-loglevel", "error", "-nostdin", "-y",
             "-ss", f"{max(0.0, timestamp):.3f}",
@@ -190,6 +229,13 @@ class TokenReducer:
         run(cmd, timeout=300, check=False)
         if not out_path.exists() or out_path.stat().st_size == 0:
             # Seeking past the end of a clip yields no frame; that is not an error.
+            out_path.unlink(missing_ok=True)
+            return None
+        try:
+            image_size(out_path.read_bytes())
+        except (ValueError, OSError):
+            # Present but not an image. Same reasoning as an empty file: the
+            # evidence does not exist, so the keyframe set should not claim it.
             out_path.unlink(missing_ok=True)
             return None
         return out_path
