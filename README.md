@@ -407,7 +407,7 @@ pip install -e ".[dev]"
 
 # Linux with Xvfb — the whole suite, including the X11 and OCR tests
 apt-get install -y xvfb ffmpeg x11-xserver-utils tesseract-ocr
-bash scripts/run_tests.sh -q
+pip install -e ".[dev]" && bash scripts/run_tests.sh -q   # 413 passed, 0 skipped
 
 # Everywhere else — X11- and OCR-dependent tests skip with a reason.
 # 413 collected; on Windows that is 267 passed, 146 skipped, 0 failed.
