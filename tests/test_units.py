@@ -193,3 +193,39 @@ class TestTokenSavingsEstimate:
 
     def test_zero_duration_is_safe(self):
         assert estimate_token_saving(0, 30, 0, 0)["reduction_pct"] == 0.0
+
+
+class TestPackageSurface:
+    """The public surface, checked against itself.
+
+    ``__all__`` is the promise the README makes to anyone typing an import. A
+    name listed there that does not resolve is only ever found by the user who
+    tried it, which is the worst possible time to discover it — so it is checked
+    here instead.
+    """
+
+    def test_every_exported_name_resolves(self):
+        import agent_visual_harness as package
+
+        assert [n for n in package.__all__ if not hasattr(package, n)] == []
+
+    def test_the_submodule_contract_holds_too(self):
+        from agent_visual_harness import vision
+
+        assert [n for n in vision.__all__ if not hasattr(vision, n)] == []
+
+    def test_no_name_is_exported_twice(self):
+        import agent_visual_harness as package
+
+        assert len(package.__all__) == len(set(package.__all__))
+
+    def test_the_model_layer_is_reachable_from_the_top_level(self):
+        # The triage names are the ones most likely to be missed, because they
+        # were added to a module that already had an export list.
+        import agent_visual_harness as package
+
+        for name in ("Triage", "OllamaBackend", "LayaBackend", "RemoteBackend",
+                     "Question", "Decision", "Frame", "frames_from_manifest",
+                     "estimate_tokens", "DEFAULT_VLM_MODEL"):
+            assert name in package.__all__, f"{name} is not exported"
+            assert hasattr(package, name), f"{name} is exported but does not resolve"

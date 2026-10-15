@@ -294,11 +294,13 @@ class OllamaBackend(Backend):
         *,
         timeout: float = 600.0,
         temperature: float = 0.0,
+        max_tokens: int = 256,
     ) -> None:
         self.model = model
         self.endpoint = endpoint.rstrip("/")
         self.timeout = timeout
         self.temperature = temperature
+        self.max_tokens = max_tokens
         self.name = f"ollama:{model}"
         self.calls = 0
         self.seconds = 0.0
@@ -310,6 +312,7 @@ class OllamaBackend(Backend):
             "endpoint": self.endpoint,
             "local": True,
             "temperature": self.temperature,
+            "max_tokens": self.max_tokens,
         }
 
     def ask(self, image: bytes, question: str, *, timeout: float | None = None) -> str:
@@ -320,7 +323,15 @@ class OllamaBackend(Backend):
             "stream": False,
             # Zero temperature so the same frame gives the same answer twice.
             # A regression gate that drifts between runs is not a gate.
-            "options": {"temperature": self.temperature},
+            #
+            # ``num_predict`` bounds the worst case: left unset, a model that
+            # fails to emit EOS generates until the context runs out, which on a
+            # CPU is the difference between a slow run and one that never ends.
+            # 256 tokens is far more than "answer in one sentence" needs.
+            "options": {
+                "temperature": self.temperature,
+                "num_predict": self.max_tokens,
+            },
         }
         started = time.monotonic()
         data = _post_json(
