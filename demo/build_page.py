@@ -10,6 +10,7 @@ drift from the measurement that produced it. Re-run this after
 
 from __future__ import annotations
 
+import hashlib
 import html
 import json
 import re
@@ -316,25 +317,37 @@ def counted_block(agent: dict) -> str:
 
     estimate_whole = workflows.get("whole", {}).get("tokens_after") or 0
     estimate_triaged = workflows.get("triaged", {}).get("tokens_after") or 0
+    estimate_cropped = workflows.get("cropped", {}).get("tokens_after") or 0
+    counted_cropped = headline.get("counted_tokens_cropped")
     counted_triaged = headline.get("counted_tokens_triaged")
     ratio = headline.get("counted_triaged_vs_whole_pct")
     estimated_ratio = headline.get("triaged_vs_whole_pct")
     curve = agent.get("token_curve") or []
 
-    # A counted ratio this close to 100% is a result, not a rounding error, and
-    # it inverts the claim the table above is built around. Say so here, in the
-    # place where a reader has just been looking at a 48% number.
-    flat = ratio is not None and ratio >= 95.0
+    # The question here is whether *cropping* paid, so the comparison is B against
+    # A. Comparing C against A would fold in the filter's savings and quietly let
+    # the crop look like it did something, which is the exact mistake this whole
+    # section exists to avoid.
+    crop_ratio = None
+    if counted_whole and counted_cropped:
+        crop_ratio = round(100.0 * counted_cropped / counted_whole, 1)
+    estimated_crop_ratio = None
+    if estimate_whole:
+        estimated_crop_ratio = round(100.0 * estimate_cropped / estimate_whole, 1)
+
+    flat = crop_ratio is not None and crop_ratio >= 95.0
 
     if ratio is not None:
         stats = (
             '<div class="vgrid">'
-            '<div class="vstat"><span class="k">Every keyframe whole, counted by the model'
-            f'</span><span class="v warn">{num(counted_whole)} tokens</span></div>'
-            '<div class="vstat"><span class="k">Cropped to what moved, counted by the model'
-            f'</span><span class="v">{num(counted_triaged)} tokens</span></div>'
-            '<div class="vstat"><span class="k">Counted, cropped vs whole'
-            f'</span><span class="v">{ratio}%</span></div>'
+            '<div class="vstat"><span class="k">Row A — every keyframe whole, counted by the '
+            f'model</span><span class="v warn">{num(counted_whole)} tokens</span></div>'
+            '<div class="vstat"><span class="k">Row B — cropped to what moved'
+            f'</span><span class="v">{num(counted_cropped)} tokens</span></div>'
+            '<div class="vstat"><span class="k">Row C — triaged, frames skipped too'
+            f'</span><span class="v good">{num(counted_triaged)} tokens</span></div>'
+            '<div class="vstat"><span class="k">What the crop alone bought'
+            f'</span><span class="v">{crop_ratio}%</span></div>'
             '</div>'
         )
     else:
@@ -353,26 +366,27 @@ def counted_block(agent: dict) -> str:
     if flat:
         verdict = (
             '<p class="insp-note"><b>Cropping did not make this model cheaper, and the '
-            'table above is wrong to imply that it does.</b> The same frames cost '
-            f'{num(counted_whole)} tokens sent whole and {num(counted_triaged)} cropped to '
-            f"what moved — {ratio}%, against the {estimated_ratio}% the geometric estimate "
-            'predicted. Both figures are what the model itself reported being fed '
-            '(<code>prompt_eval_count</code>, straight from the server). The curve below '
-            'is why: this server resizes an image up to a fixed '
+            'table above is wrong to imply that it does.</b> Cropping to what the diff '
+            f'said moved — row B — cost {num(counted_cropped)} tokens against '
+            f'{num(counted_whole)} for those same frames sent whole, or {crop_ratio}%, '
+            f'where the geometric estimate called it {estimated_crop_ratio}%. Both figures '
+            'are what the model itself reported being fed '
+            '(<code>prompt_eval_count</code>, straight from the server). Row C reaches '
+            f'{num(counted_triaged)}, but that difference is the filter dropping frames, '
+            'not the crop: on this stack <b>not sending a frame pays and cropping one does '
+            'not</b>. The curve below is why — this server resizes an image up to a fixed '
             'budget before the vision encoder sees it, so a '
             f"{curve[0].get('width')}×{curve[0].get('height')} crop costs about the same "
             'as a whole screen. The crop still cuts the bytes on the wire, and it still '
-            'points the model at the thing that changed. What it does not do on this stack '
-            'is shrink the bill — and the reason is only known because the count was '
-            'taken.</p>'
+            'points the model at what changed. It just is not a token saving here, and the '
+            'only reason that is knowable is that the count was taken.</p>'
         ) if curve else (
-            '<p class="insp-note"><b>Cropping did not make this model cheaper.</b> The same '
-            f'frames cost {num(counted_whole)} tokens whole and {num(counted_triaged)} '
-            f'cropped - {ratio}%, against the {estimated_ratio}% the estimate predicted. '
-            'Both figures are what the model itself reported being fed '
-            '(prompt_eval_count, straight from the server). '
-            'The crop still cuts the bytes on the wire and points the model at what '
-            'changed; what it does not do on this stack is shrink the bill.</p>'
+            '<p class="insp-note"><b>Cropping did not make this model cheaper.</b> Cropping '
+            f'to what moved cost {num(counted_cropped)} tokens against {num(counted_whole)} '
+            f'for the same frames whole — {crop_ratio}%, where the estimate called it '
+            f'{estimated_crop_ratio}%. Both figures are what the model itself reported '
+            'being fed (prompt_eval_count, straight from the server). On this stack not '
+            'sending a frame pays and cropping one does not.</p>'
         )
     elif ratio is None:
         verdict = ""
@@ -428,6 +442,23 @@ def state_block(agent: dict) -> str:
     )
 
 
+def data_fingerprint() -> str:
+    """A short digest of every measurement file the page is built from.
+
+    Hashed over the files themselves rather than the rendered values so the
+    checker can recompute it independently. If the two digests disagree, the
+    page on disk was built from data that has since changed — and a page full of
+    correct-looking numbers from a stale run is the worst outcome here, because
+    nothing about it looks wrong.
+    """
+    digest = hashlib.sha256()
+    for path in (RESULTS, MANIFEST, INSPECTION, AGENT):
+        if path.exists():
+            digest.update(path.name.encode("utf-8"))
+            digest.update(path.read_bytes())
+    return digest.hexdigest()[:16]
+
+
 # -------------------------------------------------------------------------- main
 
 def main() -> int:
@@ -457,6 +488,10 @@ def main() -> int:
     data["agent"] = json.loads(AGENT.read_text(encoding="utf-8"))
 
     text = TEMPLATE.read_text(encoding="utf-8")
+    # A fingerprint of the measurement files this page was built from, so the
+    # checker can tell a current page from a stale one. A page that outlives a
+    # re-run is worse than no page at all: it still looks verified.
+    text = text.replace("{{data_fingerprint}}", data_fingerprint())
     text = STRIP_BLOCK.sub(lambda m: strip_block(m.group(1), data), text)
     text = STILLS_BLOCK.sub(lambda _: stills_block(data), text)
     text = AGENT_NOTE_BLOCK.sub(lambda _: agent_note(data["agent"]), text)

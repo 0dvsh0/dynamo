@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="dynamo-data" content="be218c3fbd933dab">
 <title>Dynamo — one real agent checkout, three workflows, measured</title>
 <meta name="description" content="A real headless-Chromium agent drives a real checkout flow — including a declined card — through three capture workflows. Every artifact and every number is measured.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -849,7 +850,7 @@ click_x, click_y = <span class="c">resolve</span>(marks, model_answer)</pre>
             <th class="num">frames sent</th>
             <th class="num">sent whole</th>
             <th class="num">estimated tokens</th>
-            <th class="num">of sending all</th>
+            <th class="num">est. vs sending all</th>
           </tr>
         </thead>
         <tbody>
@@ -878,7 +879,7 @@ click_x, click_y = <span class="c">resolve</span>(marks, model_answer)</pre>
       </table>
     </div>
 
-    <div class="vgrid"><div class="vstat"><span class="k">Every keyframe whole, counted by the model</span><span class="v warn">32,132 tokens</span></div><div class="vstat"><span class="k">Cropped to what moved, counted by the model</span><span class="v">26,526 tokens</span></div><div class="vstat"><span class="k">Counted, cropped vs whole</span><span class="v">82.55%</span></div></div><p class="insp-note"><b>Two counts on purpose, and they differ.</b> The table prices a frame from its pixel area, which is what lets a budget be checked before a model exists and gives the same answer on every machine. These are what the model itself reported being fed — <code>prompt_eval_count</code>, straight from the server. Both are printed because the only way to know how far to trust an estimator is to put the real figure beside it. Cropped versus whole comes out at 82.55% counted, 38.04% estimated.</p><div class="tablewrap"><table><thead><tr><th>Image sent to the model</th><th class="num">megapixels</th><th class="num">estimated tokens</th><th class="num">counted by the model</th></tr></thead><tbody><tr><td>1280×800</td><td class='num'>1.024</td><td class='num'>783</td><td class='num'>1,108</td></tr><tr><td>640×400</td><td class='num'>0.256</td><td class='num'>196</td><td class='num'>1,108</td></tr><tr><td>320×200</td><td class='num'>0.064</td><td class='num'>49</td><td class='num'>1,108</td></tr><tr><td>128×80</td><td class='num'>0.010</td><td class='num'>8</td><td class='num'>1,108</td></tr><tr><td>25×16</td><td class='num'>0.000</td><td class='num'>0</td><td class='num'>1,122</td></tr></tbody></table></div>
+    <div class="vgrid"><div class="vstat"><span class="k">Row A — every keyframe whole, counted by the model</span><span class="v warn">32,132 tokens</span></div><div class="vstat"><span class="k">Row B — cropped to what moved</span><span class="v">32,014 tokens</span></div><div class="vstat"><span class="k">Row C — triaged, frames skipped too</span><span class="v good">26,526 tokens</span></div><div class="vstat"><span class="k">What the crop alone bought</span><span class="v">99.6%</span></div></div><p class="insp-note"><b>Cropping did not make this model cheaper, and the table above is wrong to imply that it does.</b> Cropping to what the diff said moved — row B — cost 32,014 tokens against 32,132 for those same frames sent whole, or 99.6%, where the geometric estimate called it 48.5%. Both figures are what the model itself reported being fed (<code>prompt_eval_count</code>, straight from the server). Row C reaches 26,526, but that difference is the filter dropping frames, not the crop: on this stack <b>not sending a frame pays and cropping one does not</b>. The curve below is why — this server resizes an image up to a fixed budget before the vision encoder sees it, so a 1280×800 crop costs about the same as a whole screen. The crop still cuts the bytes on the wire, and it still points the model at what changed. It just is not a token saving here, and the only reason that is knowable is that the count was taken.</p><div class="tablewrap"><table><thead><tr><th>Image sent to the model</th><th class="num">megapixels</th><th class="num">estimated tokens</th><th class="num">counted by the model</th></tr></thead><tbody><tr><td>1280×800</td><td class='num'>1.024</td><td class='num'>783</td><td class='num'>1,108</td></tr><tr><td>640×400</td><td class='num'>0.256</td><td class='num'>196</td><td class='num'>1,108</td></tr><tr><td>320×200</td><td class='num'>0.064</td><td class='num'>49</td><td class='num'>1,108</td></tr><tr><td>128×80</td><td class='num'>0.010</td><td class='num'>8</td><td class='num'>1,108</td></tr><tr><td>25×16</td><td class='num'>0.000</td><td class='num'>0</td><td class='num'>1,122</td></tr></tbody></table></div>
 
     <p class="insp-note"><b>Measured on this machine.</b> Every frame was answered by <code>qwen3-vl:4b</code> served by <code>http://127.0.0.1:11434</code>, with <code>laya</code> deciding which frames were worth asking about. All three columns are that run's decisions.</p>
 

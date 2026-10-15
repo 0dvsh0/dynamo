@@ -10,6 +10,7 @@ checks that the load-bearing claims on the page are the measured ones.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import sys
@@ -260,12 +261,22 @@ def check_agent(html: str, problems: list[str]) -> list[str]:
             "the page claims tokens were counted by a model, but no counted token "
             "total exists in agent.json"
         )
-        ratio = agent["headline"].get("counted_triaged_vs_whole_pct")
-        if ratio is not None and ratio >= 95.0 and "did not make this model cheaper" not in html:
+        counted_whole = agent["headline"].get("counted_tokens_whole")
+        counted_cropped = agent["headline"].get("counted_tokens_cropped")
+        # Recomputed here rather than read from the page, so this check is an
+        # independent opinion about the data and not a replay of the renderer's
+        # arithmetic. Row B against row A isolates the crop; row C against row A
+        # would hide it behind the filter's savings.
+        crop_ratio = (
+            round(100.0 * counted_cropped / counted_whole, 1)
+            if counted_whole and counted_cropped
+            else None
+        )
+        if crop_ratio is not None and crop_ratio >= 95.0 and "did not make this model cheaper" not in html:
             problems.append(
-                f"the model was charged {ratio}% of the tokens after cropping, so the "
-                "crop saved almost nothing — but the page does not say that anywhere "
-                "near the table that implies it did"
+                f"cropping left the model charged {crop_ratio}% of the tokens, so the "
+                "crop saved nothing — but the page does not say that anywhere near "
+                "the table that implies it did"
             )
         if agent.get("token_curve") and "megapixels" not in html:
             problems.append(
@@ -327,11 +338,43 @@ def check_agent(html: str, problems: list[str]) -> list[str]:
     return notes
 
 
+def data_fingerprint() -> str:
+    """The same digest build_page stamps into the page.
+
+    Recomputed from the files rather than read from the page, so this is a
+    check and not an echo.
+    """
+    digest = hashlib.sha256()
+    for path in (RESULTS, MANIFEST, INSPECTION, AGENT):
+        if path.exists():
+            digest.update(path.name.encode("utf-8"))
+            digest.update(path.read_bytes())
+    return digest.hexdigest()[:16]
+
+
 def main() -> int:
     html = PAGE.read_text(encoding="utf-8")
     data = json.loads(RESULTS.read_text(encoding="utf-8"))
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
     problems: list[str] = []
+
+    # --------------------------------------------------- is this page current?
+    # Every other check below verifies a number *in* the page. That is worthless
+    # if the page was built from an older run of the benchmark, so staleness is
+    # checked first and treated as fatal.
+    stamp = re.search(r'<meta name="dynamo-data" content="([0-9a-f]+)"', html)
+    expected = data_fingerprint()
+    if stamp is None:
+        problems.append(
+            "the page carries no data fingerprint, so a stale page cannot be told "
+            "from a current one — re-run demo/build_page.py"
+        )
+    elif stamp.group(1) != expected:
+        problems.append(
+            f"this page was built from different measurements: it carries "
+            f"{stamp.group(1)}, the data in demo/data/ hashes to {expected}. Re-run "
+            f"demo/build_page.py, or the numbers on the page are from an old run."
+        )
 
     # ------------------------------------------------------------- assets
     refs = sorted(set(re.findall(r'(?:src|href)="(?!#|https?:)([^"]+)"', html)))
