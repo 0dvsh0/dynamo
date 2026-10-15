@@ -135,7 +135,7 @@ Ollama answering and Laya deciding as the filter (`demo/run_agent_bench.py` →
 | --- | --- | --- | --- | --- | --- | --- |
 | A · every keyframe, whole | 29 | 0 | 22,707 | 100% | 32,132 | 100% |
 | B · cropped to what the diff says moved | 29 | 20 | 11,008 | 48.5% | 32,014 | **99.6%** |
-| C · triaged: skip → filter → crop | **24** | 20 | 8,638 | 38.0% | 26,526 | **82.6%** |
+| C · triaged: skip → filter → crop | **24** | 15 | 8,638 | 38.0% | 26,526 | **82.6%** |
 
 `estimated` is a per-megapixel price applied to the pixels sent: cheap, identical
 on every machine, and available before a model exists. `counted` is
