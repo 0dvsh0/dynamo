@@ -241,6 +241,26 @@ def check_agent(html: str, problems: list[str]) -> list[str]:
                 "columns differ — one of them is not what it claims to be"
             )
 
+    # A token count the model reported is a stronger claim than the geometric
+    # estimate, so it gets its own guard: shown when it exists, attributed to the
+    # server field it came from, and absent when no model ran.
+    if agent["headline"].get("counted_tokens_whole"):
+        if "counted by the model" not in html:
+            problems.append(
+                "the run recorded real prompt-token counts, but the page does not "
+                "show them"
+            )
+        if "prompt_eval_count" not in html:
+            problems.append(
+                "the page shows counted tokens without naming where the count came "
+                "from, which makes it unverifiable"
+            )
+    elif "counted by the model" in html:
+        problems.append(
+            "the page claims tokens were counted by a model, but no counted token "
+            "total exists in agent.json"
+        )
+
     for name, label in (("whole", "every keyframe whole"),
                         ("cropped", "cropped"),
                         ("triaged", "triaged")):

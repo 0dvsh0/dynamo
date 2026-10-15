@@ -380,7 +380,7 @@ apt-get install -y xvfb ffmpeg x11-xserver-utils tesseract-ocr
 bash scripts/run_tests.sh -q
 
 # Everywhere else — X11- and OCR-dependent tests skip with a reason.
-# 406 collected; on Windows that is 260 passed, 146 skipped, 0 failed.
+# 413 collected; on Windows that is 267 passed, 146 skipped, 0 failed.
 pytest -q
 ```
 

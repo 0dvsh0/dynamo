@@ -475,6 +475,91 @@ def test_laya_rejects_a_response_with_no_answers(monkeypatch):
         LayaBackend().decide("state", [Question("worth", "noul", "act?")])
 
 
+# ---------------------------------------------------------------- counted tokens
+
+
+def test_the_count_comes_from_the_model_and_not_the_geometry(monkeypatch):
+    """A zero estimate beside a real count is the whole point.
+
+    ``tokens_after`` is derived from pixel area, so an empty image estimates
+    zero however the model was actually billed. The two numbers answer different
+    questions and are kept apart on purpose; this asserts the second one cannot
+    have leaked in from the first.
+    """
+    monkeypatch.setattr(
+        "agent_visual_harness.vision._post_json",
+        lambda url, payload, *, timeout, api_key=None: {
+            "response": "a decline notice",
+            "prompt_eval_count": 1089,
+        },
+    )
+    report = Triage(OllamaBackend()).run(
+        [frame("a", regions=[(0, 0, 10, 10)])], "what happened?"
+    )
+
+    answer = report.answers[0]
+    assert answer.text == "a decline notice"
+    assert answer.prompt_tokens == 1089
+    assert answer.tokens_after == 0
+    assert report.prompt_tokens == 1089
+
+
+def test_a_server_that_omits_the_count_leaves_it_unset(monkeypatch):
+    monkeypatch.setattr(
+        "agent_visual_harness.vision._post_json",
+        lambda url, payload, *, timeout, api_key=None: {"response": "ok"},
+    )
+    backend = OllamaBackend()
+    backend.ask(b"", "q")
+
+    # None, not 0: "the server did not say" and "the server said zero" are
+    # different facts and only one of them is a measurement.
+    assert backend.last_prompt_tokens is None
+
+
+def test_a_stub_claims_nothing_about_tokens():
+    report = Triage(StubBackend()).run(
+        [frame("a", regions=[(0, 0, 10, 10)])], "q"
+    )
+
+    assert report.answers[0].prompt_tokens is None
+    assert report.prompt_tokens is None
+    assert "prompt_tokens" in report.answers[0].to_dict()
+    assert "prompt_tokens" in report.to_dict()
+
+
+def test_laya_records_the_tokens_it_read(monkeypatch):
+    monkeypatch.setattr(
+        "agent_visual_harness.vision._post_json",
+        lambda url, payload, *, timeout, api_key=None: {
+            "answers": {"worth": {"type": "noul", "noul": 0.7, "confidence": 0.7}},
+            "usage": {"input_tokens": 42},
+        },
+    )
+    backend = LayaBackend()
+    backend.decide("state", [Question("worth", "noul", "act?")])
+
+    assert backend.last_prompt_tokens == 42
+
+
+def test_the_summary_prints_the_count_beside_the_estimate(monkeypatch):
+    monkeypatch.setattr(
+        "agent_visual_harness.vision._post_json",
+        lambda url, payload, *, timeout, api_key=None: {
+            "response": "x",
+            "prompt_eval_count": 1089,
+        },
+    )
+    report = Triage(OllamaBackend()).run(
+        [frame("a", regions=[(0, 0, 10, 10)])], "q"
+    )
+    summary = report.summary()
+
+    assert "1,089" in summary
+    assert "prompt tokens" in summary
+    assert "estimate" in summary
+
+
 # ---------------------------------------------------------------------- report
 
 

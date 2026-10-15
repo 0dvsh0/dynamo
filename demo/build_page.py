@@ -27,6 +27,7 @@ MANIFEST = HERE / "assets" / "manifest.json"
 STRIP_BLOCK = re.compile(r"<!--STRIP:(\w+)-->.*?<!--/STRIP-->", re.S)
 STILLS_BLOCK = re.compile(r"<!--STILLS-->.*?<!--/STILLS-->", re.S)
 AGENT_NOTE_BLOCK = re.compile(r"<!--AGENTNOTE-->.*?<!--/AGENTNOTE-->", re.S)
+AGENT_COUNTED_BLOCK = re.compile(r"<!--AGENTCOUNTED-->.*?<!--/AGENTCOUNTED-->", re.S)
 STATE_BLOCK = re.compile(r"<!--STATE-->.*?<!--/STATE-->", re.S)
 PLACEHOLDER = re.compile(r"\{\{([\w.]+)(?:\|(\w+))?\}\}")
 
@@ -255,6 +256,66 @@ def agent_note(agent: dict) -> str:
     )
 
 
+def counted_block(agent: dict) -> str:
+    """The model's own token count, printed beside the estimate.
+
+    The table prices frames from pixel area, which is what makes a budget
+    checkable before a model exists and identical on every machine. That number
+    is a *model of* a price list. Ollama, asked, reports the tokens it really fed
+    the model — so a run that had a model available can show both, and a reader
+    can see how far to trust the first.
+
+    Empty when no model ran: the note above already says why, and there is
+    nothing honest to add here.
+    """
+    headline = agent.get("headline") or {}
+    counted_whole = headline.get("counted_tokens_whole")
+    if not counted_whole:
+        return ""
+
+    workflows = agent.get("workflows") or {}
+
+    def num(value) -> str:
+        return f"{int(value):,}" if value is not None else "—"
+
+    estimate_whole = workflows.get("whole", {}).get("tokens_after") or 0
+    estimate_triaged = workflows.get("triaged", {}).get("tokens_after") or 0
+    counted_triaged = headline.get("counted_tokens_triaged")
+    ratio = headline.get("counted_triaged_vs_whole_pct")
+
+    if ratio is None:
+        # A model answered but did not say what it was fed, so only the part that
+        # is a count is shown. Nothing is inferred from the estimate.
+        return (
+            '<div class="vgrid">'
+            '<div class="vstat"><span class="k">Every keyframe whole, counted by the model'
+            f'</span><span class="v warn">{num(counted_whole)} tokens</span></div>'
+            '<div class="vstat"><span class="k">What the table above predicted'
+            f'</span><span class="v">{num(estimate_whole)} → {num(estimate_triaged)}'
+            '</span></div>'
+            '</div>'
+        )
+
+    return (
+        '<div class="vgrid">'
+        '<div class="vstat"><span class="k">Every keyframe whole, counted by the model'
+        f'</span><span class="v warn">{num(counted_whole)} tokens</span></div>'
+        '<div class="vstat"><span class="k">Cropped to what moved, counted by the model'
+        f'</span><span class="v good">{num(counted_triaged)} tokens</span></div>'
+        f'<div class="vstat"><span class="k">Counted, cropped vs whole'
+        f'</span><span class="v">{ratio}%</span></div>'
+        '</div>'
+        '<p class="insp-note"><b>Two counts on purpose, and they differ.</b> The table '
+        'prices a frame from its pixel area, which is what lets a budget be checked before '
+        'a model exists and gives the same answer on every machine. These are what the '
+        'model itself reported being fed — <code>prompt_eval_count</code>, straight from '
+        'the server. They are not the same measurement, so they are not the same number, '
+        'and both are printed because the only way to know how far to trust an estimator '
+        'is to put the real figure beside it. The ratio the layer turns on comes out at '
+        f'{ratio}% counted, {headline.get("triaged_vs_whole_pct")}% estimated.</p>'
+    )
+
+
 def state_block(agent: dict) -> str:
     """Exactly what a text decision model is handed for one real frame.
 
@@ -325,6 +386,7 @@ def main() -> int:
     text = STRIP_BLOCK.sub(lambda m: strip_block(m.group(1), data), text)
     text = STILLS_BLOCK.sub(lambda _: stills_block(data), text)
     text = AGENT_NOTE_BLOCK.sub(lambda _: agent_note(data["agent"]), text)
+    text = AGENT_COUNTED_BLOCK.sub(lambda _: counted_block(data["agent"]), text)
     text = STATE_BLOCK.sub(lambda _: state_block(data["agent"]), text)
 
     missing: list[str] = []
