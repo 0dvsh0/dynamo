@@ -626,7 +626,12 @@ def build_parser() -> argparse.ArgumentParser:
             "  dynamo som shot.png --boxes boxes.json --labels Pay,Cancel --out som.png\n"
         ),
     )
-    parser.add_argument("--version", action="version", version=f"{PROGRAM} {__version__}")
+    parser.add_argument("-V", "--version", action="version", version=f"{PROGRAM} {__version__}")
+    parser.add_argument(
+        "--license",
+        action="store_true",
+        help="print license and copyright information and exit",
+    )
     sub = parser.add_subparsers(dest="command_name", metavar="<command>")
 
     # ---- record
@@ -840,6 +845,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     """Entry point for the ``dynamo`` console script."""
     parser = build_parser()
     args = parser.parse_args(list(argv) if argv is not None else None)
+
+    if getattr(args, "license", False):
+        print(f"{PROGRAM} {__version__} - MIT License")
+        print("Copyright (c) 2026 Devansh")
+        print("https://github.com/0dvsh0/dynamo")
+        return 0
 
     if getattr(args, "command_name", None) is None:
         parser.print_help()
