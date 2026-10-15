@@ -65,12 +65,10 @@ from agent_visual_harness import (  # noqa: E402
     MAX_STATE_CHARS,
     TOKENS_PER_MEGAPIXEL,
     Frame,
-    HarnessError,
     LayaBackend,
     OllamaBackend,
     StubBackend,
     Triage,
-    estimate_tokens,
     frames_from_manifest,
     have_tesseract,
 )
@@ -146,7 +144,9 @@ def run_config(name: str, frames: list[Frame], *, primary, filter_backend, crop:
         else:
             what = f"{answer.tokens_before:>6} → {answer.tokens_after:>6} tok"
             what += ", cropped" if answer.cropped else "        "
-            what += f", {answer.elapsed:5.1f}s"
+            if answer.prompt_tokens is not None:
+                what += f", model counted {answer.prompt_tokens:>5}"
+            what += f", {answer.elapsed:6.1f}s"
         print(f"  [{index:>3}/{total}] {answer.frame:<20} {what}", flush=True)
 
     started = time.monotonic()
@@ -318,14 +318,39 @@ def main(argv: list[str] | None = None) -> int:
             100.0 * triaged["tokens_after"] / whole["tokens_after"], 2
         )
 
+    # What the model actually counted, when a model did.  Kept beside the
+    # estimate rather than replacing it, because the two answer different
+    # questions: the estimate plans a run before you have a model, the count
+    # tells you what that run cost.
+    if whole.get("prompt_tokens") and triaged.get("prompt_tokens"):
+        headline["counted_tokens_whole"] = whole["prompt_tokens"]
+        headline["counted_tokens_cropped"] = workflows["cropped"]["prompt_tokens"]
+        headline["counted_tokens_triaged"] = triaged["prompt_tokens"]
+        if whole["prompt_tokens"]:
+            headline["counted_triaged_vs_whole_pct"] = round(
+                100.0 * triaged["prompt_tokens"] / whole["prompt_tokens"], 2
+            )
+
     notes = [
         "The keyframe set is already reduced by the token reducer, so most frames "
         "here are action anchors — which are never skipped on purpose. The "
         "'unchanged' saving bites on raw frames, not on a reduced set.",
-        "Token counts use a published per-megapixel price list "
-        f"({TOKENS_PER_MEGAPIXEL} tokens/MP). They are a model of a price list, "
-        "not a tokenizer measurement.",
     ]
+    if measured:
+        notes.append(
+            "Tokens appear twice on purpose. `tokens_before`/`tokens_after` are a "
+            f"geometric estimate from pixel area ({TOKENS_PER_MEGAPIXEL} tokens/MP) "
+            "— that is what lets a budget be checked before a model exists. "
+            "`prompt_tokens` is what the model itself reported counting. The gap "
+            "between them is a fact about the estimator, and it only exists to be "
+            "reported because a model answered."
+        )
+    else:
+        notes.append(
+            "Token counts here are a geometric estimate from pixel area "
+            f"({TOKENS_PER_MEGAPIXEL} tokens/MP), not a tokenizer measurement — no "
+            "model ran, so nothing could report a real count."
+        )
     if not filter_measured:
         notes.append(
             "The triaged column ran without its filter step, so it is identical to "
@@ -410,6 +435,14 @@ def main(argv: list[str] | None = None) -> int:
           f"({triaged['calls_avoided']} never sent)")
     if headline.get("triaged_vs_whole_pct") is not None:
         print(f"{'triaged vs whole':<22}{headline['triaged_vs_whole_pct']}% of the tokens")
+    if headline.get("counted_tokens_whole") is not None:
+        print()
+        print("counted by the model itself (prompt_eval_count):")
+        print(f"{'whole frames':<22}{headline['counted_tokens_whole']:,} tokens")
+        print(f"{'cropped':<22}{headline['counted_tokens_cropped']:,} tokens")
+        print(f"{'triaged':<22}{headline['counted_tokens_triaged']:,} tokens")
+        print(f"{'triaged vs whole':<22}"
+              f"{headline['counted_triaged_vs_whole_pct']}% of the tokens")
     print(f"{'measured':<22}{measured}")
     if not measured:
         print(f"\nNOT A MEASUREMENT: {why}")

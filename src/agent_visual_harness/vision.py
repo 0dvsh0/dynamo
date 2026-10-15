@@ -258,6 +258,9 @@ class Backend:
 
     name = "backend"
     local = True
+    # The model's own count of what it was given, when it reports one.  None
+    # means "this backend does not say", which is not the same as zero.
+    last_prompt_tokens: int | None = None
 
     def describe(self) -> dict[str, Any]:
         return {"name": self.name, "local": self.local}
@@ -339,6 +342,13 @@ class OllamaBackend(Backend):
         )
         self.calls += 1
         self.seconds += time.monotonic() - started
+        # Ollama reports how many tokens it actually fed the model.  Recorded
+        # rather than assumed: an estimate that can never be checked against the
+        # real number is just a better-looking guess.
+        counted = data.get("prompt_eval_count")
+        self.last_prompt_tokens = (
+            int(counted) if isinstance(counted, (int, float)) else None
+        )
         return str(data.get("response") or "").strip()
 
     def available(self) -> bool:
@@ -496,6 +506,14 @@ class LayaBackend(Backend):
         )
         self.calls += 1
         self.seconds += time.monotonic() - started
+
+        # Laya reports the tokens it read next to its answers. Same rule as the
+        # generative half: record it when it is there, None when it is not.
+        usage = data.get("usage")
+        counted = usage.get("input_tokens") if isinstance(usage, Mapping) else None
+        self.last_prompt_tokens = (
+            int(counted) if isinstance(counted, (int, float)) else None
+        )
 
         answers = data.get("answers")
         if not isinstance(answers, Mapping):
@@ -746,6 +764,13 @@ class Answer:
     elapsed: float = 0.0
     tokens_before: int = 0
     tokens_after: int = 0
+    # What the model itself said it was given, when it says.  ``tokens_before``
+    # and ``tokens_after`` are *estimates* derived from pixel geometry, which is
+    # what makes them available before anything runs and identical on every
+    # machine; this is the real number, and the two are not the same.  Keeping
+    # both is the point: one plans, the other accounts, and the gap between them
+    # is a fact about the estimator worth being able to see.
+    prompt_tokens: int | None = None
     filtered_p: float | None = None
     skipped_reason: str | None = None
 
@@ -765,6 +790,7 @@ class Answer:
             "elapsed": round(self.elapsed, 3),
             "tokens_before": self.tokens_before,
             "tokens_after": self.tokens_after,
+            "prompt_tokens": self.prompt_tokens,
             "filtered_p": None if self.filtered_p is None else round(self.filtered_p, 4),
             "skipped_reason": self.skipped_reason,
         }
@@ -784,6 +810,9 @@ class Report:
     cropped: int = 0
     tokens_before: int = 0
     tokens_after: int = 0
+    # The sum of what the models said they were given, or None when no model
+    # reported it.  None and 0 are different answers and both are worth keeping.
+    prompt_tokens: int | None = None
     elapsed: float = 0.0
     answers: list[Answer] = field(default_factory=list)
     backends: dict[str, Any] = field(default_factory=dict)
@@ -813,6 +842,7 @@ class Report:
             "calls_avoided": self.calls_avoided,
             "tokens_before": self.tokens_before,
             "tokens_after": self.tokens_after,
+            "prompt_tokens": self.prompt_tokens,
             "token_ratio": round(self.token_ratio, 4),
             "elapsed": round(self.elapsed, 3),
             "backends": self.backends,
@@ -836,6 +866,11 @@ class Report:
             lines.append(
                 f"tokens    {self.tokens_before:,} -> {self.tokens_after:,} "
                 f"({self.token_ratio * 100:.1f}% of sending every frame whole)"
+            )
+        if self.prompt_tokens is not None:
+            lines.append(
+                f"measured  {self.prompt_tokens:,} prompt tokens, as counted by the "
+                f"model itself (the estimate above said {self.tokens_after:,})"
             )
         lines.append(f"elapsed   {self.elapsed:.2f}s")
         return "\n".join(lines)
@@ -994,6 +1029,8 @@ class Triage:
             report.answers.append(answer)
             report.tokens_before += answer.tokens_before
             report.tokens_after += answer.tokens_after
+            if answer.prompt_tokens is not None:
+                report.prompt_tokens = (report.prompt_tokens or 0) + answer.prompt_tokens
 
             if answer.filtered_p is not None:
                 report.filter_calls += 1
@@ -1073,6 +1110,7 @@ class Triage:
         answer.elapsed = time.monotonic() - started
         answer.text = text
         answer.backend = self.primary.name
+        answer.prompt_tokens = self.primary.last_prompt_tokens
         answer.tokens_after = _tokens(payload)
 
         # 4. Escalate only when a caller opted in and the local answer came back
@@ -1081,6 +1119,7 @@ class Triage:
         if self.escalation is not None and not text:
             answer.text = self.escalation.ask(payload, question, timeout=timeout)
             answer.backend = self.escalation.name
+            answer.prompt_tokens = self.escalation.last_prompt_tokens
             answer.escalated = True
 
         return answer

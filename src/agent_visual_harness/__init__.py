@@ -163,4 +163,5 @@ __all__ = [
     "RecorderStartTimeout",
     "ProcessingError",
     "SessionError",
+    "VisionError",
 ]
