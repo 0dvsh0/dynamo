@@ -106,7 +106,7 @@ class TestInfo:
         assert set(payload["capabilities"]) == {
             "record", "export", "capture", "ocr", "diff", "som",
         }
-        assert payload["capabilities"]["capture"] is True
+        assert payload["capabilities"]["capture"] == (shutil.which("ffmpeg") is not None)
         assert payload["optional"]["tesseract"] == (shutil.which("tesseract") is not None)
 
     @requires_linux
