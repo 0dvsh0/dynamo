@@ -1,24 +1,24 @@
-{"timestamp": 2.0129, "action": "type: full name", "x": 528, "y": 580}
-{"timestamp": 3.5966, "action": "type: street address", "x": 528, "y": 657}
-{"timestamp": 5.0681, "action": "type: city", "x": 367, "y": 735}
-{"timestamp": 6.4192, "action": "type: postal code", "x": 690, "y": 735}
-{"timestamp": 8.4553, "action": "click: continue to payment", "x": 304, "y": 865}
-{"timestamp": 10.1675, "action": "validation error: postal code rejected"}
-{"timestamp": 11.4771, "action": "fix: postal code", "x": 690, "y": 733}
-{"timestamp": 13.2602, "action": "click: continue to payment", "x": 304, "y": 865}
-{"timestamp": 15.2716, "action": "reached payment step"}
-{"timestamp": 16.9406, "action": "type: card number", "x": 528, "y": 535}
-{"timestamp": 19.1493, "action": "type: name on card", "x": 528, "y": 612}
-{"timestamp": 21.0975, "action": "type: expiry", "x": 367, "y": 690}
-{"timestamp": 22.9324, "action": "type: cvc", "x": 690, "y": 690}
-{"timestamp": 24.8862, "action": "click: pay (attempt 1)", "x": 273, "y": 807}
-{"timestamp": 27.2925, "action": "waiting on issuer (attempt 1)"}
-{"timestamp": 30.1044, "action": "issuer declined (attempt 1)"}
-{"timestamp": 31.4564, "action": "click: pay (attempt 2)", "x": 282, "y": 865}
-{"timestamp": 33.8613, "action": "waiting on issuer (attempt 2)"}
-{"timestamp": 36.669, "action": "issuer declined (attempt 2)"}
-{"timestamp": 38.0157, "action": "click: pay (attempt 3)", "x": 282, "y": 865}
-{"timestamp": 40.4187, "action": "waiting on issuer (attempt 3)"}
-{"timestamp": 43.2268, "action": "payment captured"}
-{"timestamp": 45.1611, "action": "click: place order", "x": 304, "y": 628}
-{"timestamp": 48.2737, "action": "order confirmed"}
+{"timestamp": 2.0046, "action": "type: full name", "x": 528, "y": 580}
+{"timestamp": 3.5847, "action": "type: street address", "x": 528, "y": 657}
+{"timestamp": 5.0927, "action": "type: city", "x": 367, "y": 735}
+{"timestamp": 6.4669, "action": "type: postal code", "x": 690, "y": 735}
+{"timestamp": 8.5577, "action": "click: continue to payment", "x": 304, "y": 865}
+{"timestamp": 10.2838, "action": "validation error: postal code rejected"}
+{"timestamp": 11.6005, "action": "fix: postal code", "x": 690, "y": 733}
+{"timestamp": 13.3538, "action": "click: continue to payment", "x": 304, "y": 865}
+{"timestamp": 15.3649, "action": "reached payment step"}
+{"timestamp": 17.1048, "action": "type: card number", "x": 528, "y": 535}
+{"timestamp": 19.348, "action": "type: name on card", "x": 528, "y": 612}
+{"timestamp": 21.2895, "action": "type: expiry", "x": 367, "y": 690}
+{"timestamp": 23.1106, "action": "type: cvc", "x": 690, "y": 690}
+{"timestamp": 25.0966, "action": "click: pay (attempt 1)", "x": 273, "y": 807}
+{"timestamp": 27.5019, "action": "waiting on issuer (attempt 1)"}
+{"timestamp": 30.3136, "action": "issuer declined (attempt 1)"}
+{"timestamp": 31.6996, "action": "click: pay (attempt 2)", "x": 282, "y": 865}
+{"timestamp": 34.1084, "action": "waiting on issuer (attempt 2)"}
+{"timestamp": 36.9197, "action": "issuer declined (attempt 2)"}
+{"timestamp": 38.3048, "action": "click: pay (attempt 3)", "x": 282, "y": 865}
+{"timestamp": 40.7119, "action": "waiting on issuer (attempt 3)"}
+{"timestamp": 43.5282, "action": "payment captured"}
+{"timestamp": 45.4665, "action": "click: place order", "x": 304, "y": 628}
+{"timestamp": 48.5911, "action": "order confirmed"}

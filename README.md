@@ -134,18 +134,18 @@ Ollama answering and Laya deciding as the filter (`demo/run_agent_bench.py` →
 | How the frames reach the model | frames sent | cropped | estimated tokens | est. vs A | **counted by the model** | **counted vs A** |
 | --- | --- | --- | --- | --- | --- | --- |
 | A · every keyframe, whole | 29 | 0 | 22,707 | 100% | 32,132 | 100% |
-| B · cropped to what the diff says moved | 29 | 20 | 11,008 | 48.5% | 32,014 | **99.6%** |
-| C · triaged: skip → filter → crop | **24** | 15 | 8,638 | 38.0% | 26,526 | **82.6%** |
+| B · cropped to what the diff says moved | 29 | 20 | 10,947 | 48.2% | 32,040 | **99.7%** |
+| C · triaged: skip → filter → crop | **24** | 15 | 8,575 | 37.8% | 26,528 | **82.6%** |
 
 `estimated` is a per-megapixel price applied to the pixels sent: cheap, identical
 on every machine, and available before a model exists. `counted` is
 `prompt_eval_count` — what Ollama says it actually fed the model. Laya dropped 5
-of the 29 frames (p = 0.07, 0.03, 0.06, 0.03, 0.10) and all 29 frames came back
+of the 29 frames (p = 0.05, 0.06, 0.06, 0.07, 0.10) and all 29 frames came back
 answered.
 
 **The crop does not save tokens, and the measurement is the only reason that is
-now said out loud.** B halves the estimate and moves the real bill by 0.4%. The
-benchmark measures the shape of it, sending one frame at five sizes:
+now said out loud.** B nearly halves the estimate and moves the real bill by
+0.3%. The benchmark measures the shape of it, sending one frame at five sizes:
 
 | image sent | megapixels | estimated | counted |
 | --- | --- | --- | --- |
@@ -379,23 +379,24 @@ still hold. A demo showing the wrong number is worse than no demo.
 | --- | --- | --- | --- |
 | images to the model | 24 | 51 | 29 |
 | visual tokens | 26,400 | 56,100 | 31,900 |
-| bit-identical repeats | 1 | 21 | 1 |
-| mean frame-to-frame Δ | 3.29 | 1.75 | **11.36** |
-| frame payload | 2.4 MB | 9.5 MB | **919 KB** |
+| bit-identical repeats | 1 | 19 | 1 |
+| mean frame-to-frame Δ | 3.29 | 1.76 | **11.36** |
+| frame payload | 2.4 MB | 9.5 MB | **901 KB** |
 | survives a torn-down CI job | — | `moov atom not found` | **yes** |
 
 The honest reading, which the page states plainly:
 
 - **Screenshots and Dynamo cost about the same in tokens**, because both sample on
   actions rather than wall-clock time. Dynamo's win there is not the token count.
-- **Time-driven sampling (DIY) is the real token disaster** — 2.1× the tokens and 21 of
+- **Time-driven sampling (DIY) is the real token disaster** — 2.1× the tokens and 19 of
   50 consecutive frame pairs are pixel-identical.
 - **Dynamo's win over screenshots is everything screenshots cannot do**: the video, the
   GIF, the click overlays, the timing manifest, a crash-safe recording, and a frame
   payload 2.6× smaller because it ships WebP rather than PNG.
-- **The GIF byte comparison is close to a wash on this content** (1.90 MB vs 1.99 MB at
-  identical framerate and resolution). The two-pass palette earns its keep on flat and
-  dark UI; on bytes alone, with a dense browser UI, it does not.
+- **The GIF byte comparison is a wash on this content** (2.03 MB vs 2.12 MB at
+  identical framerate and resolution), and this run the two-pass palette came out
+  4% *larger*, not smaller. The two-pass palette earns its keep on flat and dark UI;
+  on bytes alone, with a dense browser UI, it does not.
 
 The model-facing layer is priced separately, above — and where a row of that table
 is *not* a measurement, it says so in as many words.
@@ -410,7 +411,7 @@ apt-get install -y xvfb ffmpeg x11-xserver-utils tesseract-ocr
 pip install -e ".[dev]" && bash scripts/run_tests.sh -q   # 413 passed, 0 skipped
 
 # Everywhere else — X11- and OCR-dependent tests skip with a reason.
-# 413 collected; on Windows that is 267 passed, 146 skipped, 0 failed.
+# 416 collected; on Windows that is 270 passed, 146 skipped, 0 failed.
 pytest -q
 ```
 
