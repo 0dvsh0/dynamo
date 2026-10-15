@@ -240,9 +240,22 @@ def agent_note(agent: dict) -> str:
         )
 
     if meta.get("filter_measured"):
+        # "Every frame" would be false here: the filter dropped some of them
+        # before a model was ever asked. The count of answers that came back
+        # non-empty is the claim that is actually true, so it is the one printed.
+        whole = agent.get("workflows", {}).get("whole", {})
+        replied = whole.get("answered_nonempty")
+        if replied is None:
+            evidence = " Every frame that reached the model was asked once"
+        else:
+            evidence = (
+                f' Every frame that reached the model came back answered '
+                f'({replied} of {whole.get("model_calls") or 0} non-empty)'
+            )
         return (
-            '<p class="insp-note"><b>Measured on this machine.</b> Every frame was answered '
-            f'by <code>{model}</code> served by <code>{endpoint}</code>, with '
+            '<p class="insp-note"><b>Measured on this machine.</b>'
+            f'{evidence} - the answers come from <code>{model}</code> served by '
+            f'<code>{endpoint}</code>, with '
             f'<code>{html.escape(str(filt.get("name", "a filter")))}</code> deciding which '
             'frames were worth asking about. All three columns are that run\'s decisions.</p>'
         )
