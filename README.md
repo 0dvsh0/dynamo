@@ -1,5 +1,10 @@
 # Dynamo — the AI Visual & Video Harness
 
+[![Tests](https://github.com/0dvsh0/dynamo/actions/workflows/test.yml/badge.svg)](https://github.com/0dvsh0/dynamo/actions/workflows/test.yml)
+[![Lint](https://github.com/0dvsh0/dynamo/actions/workflows/lint.yml/badge.svg)](https://github.com/0dvsh0/dynamo/actions/workflows/lint.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+
 `agent_visual_harness` is a headless, production-ready visual & video harness for
 AI coding agents, browser automation and computer-use sandboxes. It owns the
 virtual display, records every session, and compiles it into **VLM-ready
@@ -418,4 +423,4 @@ appears when you run against a real X server and a real encoder:
 
 ## Licence
 
-MIT
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
