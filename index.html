@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dynamo — The AI Visual & Video Harness for Coding Agents</title>
+  <meta name="description" content="Dynamo is a headless, production-ready visual & video harness in Python for AI coding agents, browser automation and computer-use sandboxes. Record, annotate, and compress sessions into VLM-ready keyframes and PR-ready artifacts.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="bg-glow" aria-hidden="true"></div>
+
+  <!-- ============ NAV ============ -->
+  <header id="site-header" class="site-header">
+    <nav class="nav container" aria-label="Main">
+      <a href="#" class="brand" aria-label="Dynamo home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" width="26" height="26"><rect x="1" y="1" width="30" height="30" rx="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 9h7a7 7 0 0 1 0 14H9z" fill="currentColor"/><circle cx="23" cy="9" r="2.5" fill="#0A0B0D"/></svg>
+        </span>
+        <span class="brand-name">Dynamo</span>
+      </a>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="#pipeline-section">Pipeline</a></li>
+        <li><a href="#sdk-section">SDK</a></li>
+        <li><a href="#tokens-section">Token Reducer</a></li>
+        <li><a href="#enterprise-section">Enterprise</a></li>
+        <li><a href="#faq-section">FAQ</a></li>
+      </ul>
+      <div class="nav-cta">
+        <a href="#sdk-section" class="btn btn-ghost btn-sm"><i class="fa-brands fa-github"></i> Docs</a>
+        <a href="#demo-section" class="btn btn-primary btn-sm">Talk to us</a>
+      </div>
+      <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu" aria-expanded="false"><i class="fa-solid fa-bars"></i></button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ============ HERO ============ -->
+    <section id="hero-section" class="hero container">
+      <div class="hero-copy">
+        <a href="#pipeline-section" class="pill">
+          <span class="pill-dot"></span> v1.0 · Headless X11 · Python 3.10+ <i class="fa-solid fa-arrow-right"></i>
+        </a>
+        <h1 class="hero-title">
+          Give your agents <em>eyes.</em><br>
+          Give your reviewers <em>proof.</em>
+        </h1>
+        <p class="hero-sub">
+          Dynamo is the headless <strong>AI Visual &amp; Video Harness</strong> for coding agents, browser automation and computer-use sandboxes.
+          It runs the virtual display, records every session, and compiles it into
+          <span class="hl">VLM-ready keyframes</span> and <span class="hl">PR-ready MP4/GIF artifacts</span> — in one context manager.
+        </p>
+        <div class="hero-actions">
+          <button class="install-cmd" id="install-cmd" type="button" aria-label="Copy install command">
+            <span class="prompt">$</span>
+            <code>pip install agent-visual-harness</code>
+            <i class="fa-regular fa-copy copy-icon"></i>
+          </button>
+          <a href="#demo-section" class="btn btn-primary btn-lg">Book an enterprise demo <i class="fa-solid fa-arrow-right"></i></a>
+        </div>
+        <ul class="hero-proof">
+          <li><i class="fa-solid fa-check"></i> Zero GPU required</li>
+          <li><i class="fa-solid fa-check"></i> Runs in Docker / K8s</li>
+          <li><i class="fa-solid fa-check"></i> Data never leaves your infra</li>
+        </ul>
+      </div>
+
+      <!-- Hero visual: simulated harness session -->
+      <div class="hero-visual" aria-label="Simulated Dynamo recording session">
+        <div class="window">
+          <div class="window-bar">
+            <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+            <span class="window-title">Xvfb :99 — 1920×1080×24</span>
+            <span class="rec"><span class="rec-dot"></span>REC <span id="rec-timer">00:00.0</span></span>
+          </div>
+          <div class="screen" id="hero-screen">
+            <div class="fake-app">
+              <div class="fake-side">
+                <span></span><span></span><span class="on"></span><span></span><span></span>
+              </div>
+              <div class="fake-main">
+                <div class="fake-row w60"></div>
+                <div class="fake-row w40"></div>
+                <div class="fake-cards">
+                  <div class="fake-card"></div><div class="fake-card"></div><div class="fake-card"></div>
+                </div>
+                <div class="fake-btn" id="fake-btn">Deploy</div>
+                <div class="fake-row w80"></div>
+                <div class="fake-row w50"></div>
+              </div>
+            </div>
+            <div class="cursor" id="hero-cursor"><i class="fa-solid fa-arrow-pointer"></i></div>
+            <div class="ring-layer" id="ring-layer"></div>
+          </div>
+          <div class="telemetry" id="telemetry" aria-live="polite">
+            <div class="tel-line muted">// telemetry.jsonl</div>
+          </div>
+        </div>
+        <div class="keyframe-strip" aria-label="Extracted keyframes">
+          <div class="kf-label"><span>token_reducer</span><span id="kf-count">0 / 1,800 frames kept</span></div>
+          <div class="kf-track" id="kf-track"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ COMPAT STRIP ============ -->
+    <section id="compat-section" class="compat container" aria-label="Works with">
+      <p class="eyebrow center">Drops into the stack your agents already run on</p>
+      <ul class="compat-list">
+        <li><i class="fa-brands fa-python"></i> Python SDK</li>
+        <li><i class="fa-solid fa-masks-theater"></i> Playwright</li>
+        <li><i class="fa-solid fa-robot"></i> Computer-Use APIs</li>
+        <li><i class="fa-brands fa-docker"></i> Docker</li>
+        <li><i class="fa-solid fa-dharmachakra"></i> Kubernetes</li>
+        <li><i class="fa-brands fa-github"></i> GitHub Actions</li>
+        <li><i class="fa-brands fa-linux"></i> X11 / Xvfb</li>
+        <li><i class="fa-solid fa-film"></i> FFmpeg</li>
+      </ul>
+    </section>
+
+    <!-- ============ PROBLEM ============ -->
+    <section id="problem-section" class="section container">
+      <div class="section-head">
+        <p class="eyebrow">The problem</p>
+        <h2 class="section-title">Agents act blind. Reviewers trust logs. <em>Nobody sees what happened.</em></h2>
+      </div>
+      <div class="problem-grid">
+        <article class="problem-card">
+          <span class="problem-num">01</span>
+          <h3>Raw video blows the context window</h3>
+          <p>A 60-second session at 30 fps is 1,800 frames. Feed that to a multimodal model and you pay for 1,790 near-identical images.</p>
+        </article>
+        <article class="problem-card">
+          <span class="problem-num">02</span>
+          <h3>DIY ffmpeg scripts break in CI</h3>
+          <p>Race conditions on Xvfb startup, corrupted MP4s from <code>SIGKILL</code>, missing <code>moov</code> atoms, 40 MB GIFs nobody can open in a PR.</p>
+        </article>
+        <article class="problem-card">
+          <span class="problem-num">03</span>
+          <h3>Screenshots lack causality</h3>
+          <p>A single PNG can’t tell you <em>which</em> click caused the regression. Without timestamped telemetry, visual evidence is just a guess.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- ============ PIPELINE ============ -->
+    <section id="pipeline-section" class="section container">
+      <div class="section-head">
+        <p class="eyebrow">Architecture</p>
+        <h2 class="section-title">Five modules. One harness. <em>From framebuffer to pull request.</em></h2>
+        <p class="section-sub">Each layer is independently usable, fully typed, and battle-tested against headless Linux edge cases.</p>
+      </div>
+
+      <div class="pipeline" id="pipeline">
+        <div class="pipeline-rail" aria-hidden="true"><span class="pulse"></span></div>
+
+        <article class="module-card" data-step="A">
+          <header>
+            <span class="module-icon"><i class="fa-solid fa-display"></i></span>
+            <code class="module-file">display.py</code>
+          </header>
+          <h3>Virtual Display Manager</h3>
+          <p>Owns the full <strong>Xvfb</strong> lifecycle. Configurable display number, resolution and DPI emulation, plus a readiness probe that blocks until X accepts connections.</p>
+          <ul class="module-specs">
+            <li><span>display</span><b>:99</b></li>
+            <li><span>resolution</span><b>1920x1080x24</b></li>
+            <li><span>readiness</span><b>socket probe</b></li>
+          </ul>
+        </article>
+
+        <article class="module-card" data-step="B">
+          <header>
+            <span class="module-icon"><i class="fa-solid fa-circle-dot"></i></span>
+            <code class="module-file">recorder.py</code>
+          </header>
+          <h3>Stream Recorder Daemon</h3>
+          <p>Non-blocking <code>ffmpeg -f x11grab</code> in the background. Graceful <code>SIGINT</code> shutdown finalizes the <code>moov</code> atom — no corrupted containers, ever.</p>
+          <ul class="module-specs">
+            <li><span>framerate</span><b>15–30 fps</b></li>
+            <li><span>shutdown</span><b>SIGINT · clean</b></li>
+            <li><span>telemetry</span><b>JSONL events</b></li>
+          </ul>
+        </article>
+
+        <article class="module-card" data-step="C">
+          <header>
+            <span class="module-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
+            <code class="module-file">processor.py</code>
+          </header>
+          <h3>Post-Processing Engine</h3>
+          <p>CRF-tuned H.264 / WebM for crisp code legibility. Two-pass <code>palettegen → paletteuse</code> GIFs small enough for GitHub. Optional click-ring overlays from telemetry.</p>
+          <ul class="module-specs">
+            <li><span>codec</span><b>H.264 · WebM</b></li>
+            <li><span>gif palette</span><b>128/256 · bayer</b></li>
+            <li><span>overlay</span><b>rings · crosshair</b></li>
+          </ul>
+        </article>
+
+        <article class="module-card" data-step="D">
+          <header>
+            <span class="module-icon"><i class="fa-solid fa-compress"></i></span>
+            <code class="module-file">token_reducer.py</code>
+          </header>
+          <h3>VLM Vision Pre-Processor</h3>
+          <p>Keeps only frames that matter: scene-change detection plus exact frames at every logged action. Downsampled, deduplicated, labeled and timed for your LLM payload.</p>
+          <ul class="module-specs">
+            <li><span>select</span><b>gt(scene,0.05)</b></li>
+            <li><span>anchors</span><b>action timestamps</b></li>
+            <li><span>output</span><b>JPEG/WebP + JSON</b></li>
+          </ul>
+        </article>
+
+        <article class="module-card" data-step="E">
+          <header>
+            <span class="module-icon"><i class="fa-solid fa-cube"></i></span>
+            <code class="module-file">harness.py</code>
+          </header>
+          <h3>Python SDK &amp; CLI</h3>
+          <p>One ergonomic <code>VisualHarness</code> context manager wires everything together. Same capabilities from the CLI for shell-driven agents and CI jobs.</p>
+          <ul class="module-specs">
+            <li><span>api</span><b>with VisualHarness()</b></li>
+            <li><span>cli</span><b>dynamo record</b></li>
+            <li><span>typing</span><b>fully typed</b></li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <!-- ============ SDK ============ -->
+    <section id="sdk-section" class="section container">
+      <div class="sdk-layout">
+        <div class="sdk-copy">
+          <p class="eyebrow">Developer experience</p>
+          <h2 class="section-title">Wrap your agent in <em>four lines.</em></h2>
+          <p class="section-sub">No daemons to babysit, no display variables to export, no ffmpeg flags to memorize. Enter the context, act, exit — artifacts are finalized automatically.</p>
+          <ul class="dx-list">
+            <li><i class="fa-solid fa-bolt"></i><div><b>Instant screenshots</b><span><code>take_screenshot()</code> returns bytes mid-run for in-loop agent reasoning.</span></div></li>
+            <li><i class="fa-solid fa-crosshairs"></i><div><b>Action telemetry</b><span><code>log_action()</code> timestamps every click, key and scroll for overlays and keyframe anchors.</span></div></li>
+            <li><i class="fa-solid fa-box-archive"></i><div><b>One export call</b><span>MP4, GIF and VLM frame directory with a typed <code>Artifacts</code> result.</span></div></li>
+          </ul>
+        </div>
+
+        <div class="code-window">
+          <div class="code-tabs" role="tablist" aria-label="Code examples">
+            <button class="code-tab active" role="tab" aria-selected="true" data-tab="python">agent.py</button>
+            <button class="code-tab" role="tab" aria-selected="false" data-tab="cli">CLI</button>
+            <button class="code-tab" role="tab" aria-selected="false" data-tab="docker">Dockerfile</button>
+            <button class="code-tab" role="tab" aria-selected="false" data-tab="gha">ci.yml</button>
+            <button class="code-copy" id="code-copy" aria-label="Copy code"><i class="fa-regular fa-copy"></i></button>
+          </div>
+<pre class="code-panel active" data-panel="python"><code><span class="tk-k">from</span> agent_visual_harness <span class="tk-k">import</span> <span class="tk-c">VisualHarness</span>
+
+<span class="tk-cm"># Usage in agent script:</span>
+<span class="tk-k">with</span> <span class="tk-c">VisualHarness</span>(display=<span class="tk-s">":99"</span>, resolution=(<span class="tk-n">1920</span>, <span class="tk-n">1080</span>), record=<span class="tk-k">True</span>) <span class="tk-k">as</span> harness:
+    <span class="tk-cm"># 1. Agent runs GUI actions or Playwright tests here...</span>
+    harness.<span class="tk-f">log_action</span>(<span class="tk-s">"click"</span>, x=<span class="tk-n">500</span>, y=<span class="tk-n">300</span>)
+
+    <span class="tk-cm"># 2. Grab instant viewport screenshot during execution</span>
+    screenshot_bytes = harness.<span class="tk-f">take_screenshot</span>()
+
+<span class="tk-cm"># Upon exit, files are finalized automatically:</span>
+artifacts = harness.<span class="tk-f">export</span>(
+    video_path=<span class="tk-s">"output/repro.mp4"</span>,
+    gif_path=<span class="tk-s">"output/demo.gif"</span>,
+    vlm_keyframes_dir=<span class="tk-s">"output/vlm_frames/"</span>
+)
+<span class="tk-f">print</span>(<span class="tk-s">f"Generated </span>{<span class="tk-f">len</span>(artifacts.keyframes)}<span class="tk-s"> frames for VLM context."</span>)</code></pre>
+<pre class="code-panel" data-panel="cli"><code><span class="tk-cm"># Start a display + recorder, run any command inside it</span>
+<span class="tk-p">$</span> dynamo record --display :99 --resolution 1920x1080x24 --fps 24 \
+    -- python run_agent.py
+
+<span class="tk-cm"># Compile artifacts from a finished session</span>
+<span class="tk-p">$</span> dynamo export ./session \
+    --mp4 output/repro.mp4 --crf 23 \
+    --gif output/demo.gif --max-colors 128 --dither bayer \
+    --overlay-clicks
+
+<span class="tk-cm"># Produce a token-budgeted keyframe set for your VLM</span>
+<span class="tk-p">$</span> dynamo keyframes ./session --scene 0.05 --max-size 1280 \
+    --format webp --out output/vlm_frames/
+<span class="tk-ok">✓ 24 keyframes · 1,800 frames scanned · manifest.json written</span></code></pre>
+<pre class="code-panel" data-panel="docker"><code><span class="tk-k">FROM</span> python:3.12-slim
+
+<span class="tk-k">RUN</span> apt-get update &amp;&amp; apt-get install -y --no-install-recommends \
+      xvfb ffmpeg x11-utils &amp;&amp; rm -rf /var/lib/apt/lists/*
+
+<span class="tk-k">RUN</span> pip install --no-cache-dir agent-visual-harness playwright \
+ &amp;&amp; playwright install --with-deps chromium
+
+<span class="tk-k">WORKDIR</span> /app
+<span class="tk-k">COPY</span> . .
+
+<span class="tk-cm"># Dynamo manages Xvfb itself — no DISPLAY export needed</span>
+<span class="tk-k">ENTRYPOINT</span> [<span class="tk-s">"dynamo"</span>, <span class="tk-s">"record"</span>, <span class="tk-s">"--"</span>, <span class="tk-s">"python"</span>, <span class="tk-s">"agent.py"</span>]</code></pre>
+<pre class="code-panel" data-panel="gha"><code><span class="tk-f">name</span>: agent-e2e
+<span class="tk-f">on</span>: [pull_request]
+<span class="tk-f">jobs</span>:
+  <span class="tk-f">visual-run</span>:
+    <span class="tk-f">runs-on</span>: ubuntu-latest
+    <span class="tk-f">steps</span>:
+      - <span class="tk-f">uses</span>: actions/checkout@v4
+      - <span class="tk-f">run</span>: sudo apt-get install -y xvfb ffmpeg
+      - <span class="tk-f">run</span>: pip install agent-visual-harness
+      - <span class="tk-f">run</span>: dynamo record -- pytest tests/e2e
+      - <span class="tk-f">run</span>: dynamo export ./session --gif pr/demo.gif --overlay-clicks
+      - <span class="tk-f">uses</span>: actions/upload-artifact@v4
+        <span class="tk-f">with</span>: { <span class="tk-f">name</span>: agent-recording, <span class="tk-f">path</span>: pr/ }</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ TOKEN REDUCER ============ -->
+    <section id="tokens-section" class="section container">
+      <div class="section-head">
+        <p class="eyebrow">Token Reducer</p>
+        <h2 class="section-title">Stop paying to show your model <em>the same frame twice.</em></h2>
+        <p class="section-sub">Estimate how much visual context Dynamo removes before it ever reaches your multimodal model.</p>
+      </div>
+
+      <div class="calc" id="token-calculator">
+        <form class="calc-controls" id="calc-form" onsubmit="return false;">
+          <label class="ctl">
+            <span class="ctl-head"><span>Session length</span><output id="out-duration">120 s</output></span>
+            <input type="range" id="in-duration" min="10" max="900" step="10" value="120">
+          </label>
+          <label class="ctl">
+            <span class="ctl-head"><span>Capture framerate</span><output id="out-fps">30 fps</output></span>
+            <input type="range" id="in-fps" min="5" max="60" step="1" value="30">
+          </label>
+          <label class="ctl">
+            <span class="ctl-head"><span>Logged agent actions</span><output id="out-actions">18</output></span>
+            <input type="range" id="in-actions" min="0" max="200" step="1" value="18">
+          </label>
+          <label class="ctl">
+            <span class="ctl-head"><span>Scene-change rate</span><output id="out-scene">Moderate</output></span>
+            <input type="range" id="in-scene" min="1" max="5" step="1" value="3">
+          </label>
+          <label class="ctl">
+            <span class="ctl-head"><span>Tokens per image</span><output id="out-tpi">~1,100</output></span>
+            <input type="range" id="in-tpi" min="250" max="2500" step="50" value="1100">
+          </label>
+          <p class="calc-note">Illustrative estimate. Real output depends on content, <code>scene</code> threshold and downsampling settings.</p>
+        </form>
+
+        <div class="calc-results">
+          <div class="result-row">
+            <div class="result">
+              <span class="result-label">Raw frames</span>
+              <span class="result-value" id="res-raw">3,600</span>
+              <span class="result-sub" id="res-raw-tok">3.96M tokens</span>
+            </div>
+            <div class="result-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+            <div class="result accent">
+              <span class="result-label">Dynamo keyframes</span>
+              <span class="result-value" id="res-kept">42</span>
+              <span class="result-sub" id="res-kept-tok">46.2K tokens</span>
+            </div>
+          </div>
+          <div class="bar-compare">
+            <div class="bar-row"><span>Raw</span><div class="bar"><i id="bar-raw" style="width:100%"></i></div></div>
+            <div class="bar-row"><span>Dynamo</span><div class="bar"><i id="bar-kept" class="volt" style="width:2%"></i></div></div>
+          </div>
+          <div class="reduction">
+            <span id="res-reduction">98.8%</span>
+            <p>fewer visual tokens per session — with every action-anchored frame preserved.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ARTIFACTS ============ -->
+    <section id="artifacts-section" class="section container">
+      <div class="section-head">
+        <p class="eyebrow">Outputs</p>
+        <h2 class="section-title">Every run ships <em>evidence</em>, not just exit codes.</h2>
+      </div>
+      <div class="artifact-grid">
+        <article class="artifact-card">
+          <div class="artifact-top"><i class="fa-solid fa-file-video"></i><code>repro.mp4</code></div>
+          <h3>Legible repro video</h3>
+          <p>CRF-tuned H.264 keeps monospace text crisp at a fraction of raw size. Attach to bug reports and incident reviews.</p>
+        </article>
+        <article class="artifact-card">
+          <div class="artifact-top"><i class="fa-solid fa-images"></i><code>demo.gif</code></div>
+          <h3>PR-ready looping GIF</h3>
+          <p>Two-pass palette generation with bayer dithering. Small enough to inline in a GitHub PR description.</p>
+        </article>
+        <article class="artifact-card">
+          <div class="artifact-top"><i class="fa-solid fa-layer-group"></i><code>vlm_frames/</code></div>
+          <h3>Labeled keyframes</h3>
+          <p>Deduplicated JPEG/WebP frames with a timing manifest — drop straight into a multimodal LLM context payload.</p>
+        </article>
+        <article class="artifact-card">
+          <div class="artifact-top"><i class="fa-solid fa-wave-square"></i><code>telemetry.jsonl</code></div>
+          <h3>Action timeline</h3>
+          <p>Every agent action with a precise timestamp. Correlate visual state to cause for debugging and evals.</p>
+<pre class="mini-code"><code>{"timestamp": 1.45, "action": "click", "x": 420, "y": 680}</code></pre>
+        </article>
+      </div>
+    </section>
+
+    <!-- ============ COMPARISON ============ -->
+    <section id="compare-section" class="section container">
+      <div class="section-head">
+        <p class="eyebrow">Why Dynamo</p>
+        <h2 class="section-title">Built for agents, <em>not adapted for them.</em></h2>
+      </div>
+      <div class="table-wrap">
+        <table class="compare-table">
+          <thead>
+            <tr><th scope="col">Capability</th><th scope="col">Screenshots only</th><th scope="col">DIY ffmpeg scripts</th><th scope="col" class="col-dynamo">Dynamo</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Managed Xvfb lifecycle + readiness probe</td><td><i class="fa-solid fa-xmark no"></i></td><td><i class="fa-solid fa-minus mid"></i></td><td class="col-dynamo"><i class="fa-solid fa-check yes"></i></td></tr>
+            <tr><td>Corruption-safe MP4 finalization</td><td><i class="fa-solid fa-xmark no"></i></td><td><i class="fa-solid fa-minus mid"></i></td><td class="col-dynamo"><i class="fa-solid fa-check yes"></i></td></tr>
+            <tr><td>Timestamped action telemetry</td><td><i class="fa-solid fa-xmark no"></i></td><td><i class="fa-solid fa-xmark no"></i></td><td class="col-dynamo"><i class="fa-solid fa-check yes"></i></td></tr>
+            <tr><td>Click overlays rendered on video</td><td><i class="fa-solid fa-xmark no"></i></td><td><i class="fa-solid fa-xmark no"></i></td><td class="col-dynamo"><i class="fa-solid fa-check yes"></i></td></tr>
+            <tr><td>Scene + action-anchored keyframes for VLMs</td><td><i class="fa-solid fa-minus mid"></i></td><td><i class="fa-solid fa-xmark no"></i></td><td class="col-dynamo"><i class="fa-solid fa-check yes"></i></td></tr>
+            <tr><td>Small PR-ready GIFs</td><td><i class="fa-solid fa-xmark no"></i></td><td><i class="fa-solid fa-minus mid"></i></td><td class="col-dynamo"><i class="fa-solid fa-check yes"></i></td></tr>
+            <tr><td>Python SDK + CLI parity</td><td><i class="fa-solid fa-minus mid"></i></td><td><i class="fa-solid fa-xmark no"></i></td><td class="col-dynamo"><i class="fa-solid fa-check yes"></i></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============ ENTERPRISE ============ -->
+    <section id="enterprise-section" class="section container">
+      <div class="enterprise">
+        <div class="enterprise-copy">
+          <p class="eyebrow">Enterprise</p>
+          <h2 class="section-title">Visual observability your <em>security team</em> will sign off on.</h2>
+          <p class="section-sub">Dynamo is a library, not a SaaS. Recordings, frames and telemetry are written to storage you control — nothing phones home.</p>
+          <a href="#demo-section" class="btn btn-primary btn-lg">Talk to engineering <i class="fa-solid fa-arrow-right"></i></a>
+        </div>
+        <div class="enterprise-grid">
+          <div class="ent-item"><i class="fa-solid fa-shield-halved"></i><h3>Zero data egress</h3><p>Runs entirely in your VPC, air-gapped clusters, or ephemeral sandboxes.</p></div>
+          <div class="ent-item"><i class="fa-solid fa-server"></i><h3>Fleet-scale headless</h3><p>Isolated display numbers per worker. Run hundreds of parallel agent sessions per node pool.</p></div>
+          <div class="ent-item"><i class="fa-solid fa-scale-balanced"></i><h3>Audit-grade evidence</h3><p>Immutable video + action timelines for agent governance, compliance and incident review.</p></div>
+          <div class="ent-item"><i class="fa-solid fa-microchip"></i><h3>CPU-only, low overhead</h3><p>No GPU dependency. Tunable framerate and CRF to fit tight sandbox budgets.</p></div>
+          <div class="ent-item"><i class="fa-solid fa-plug"></i><h3>Model-agnostic</h3><p>Keyframes work with any multimodal model or in-house VLM — no vendor lock-in.</p></div>
+          <div class="ent-item"><i class="fa-solid fa-headset"></i><h3>Priority support</h3><p>Architecture reviews, private Slack channel and integration help for your agent platform.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FAQ ============ -->
+    <section id="faq-section" class="section container narrow">
+      <div class="section-head">
+        <p class="eyebrow">FAQ</p>
+        <h2 class="section-title">Questions engineers ask <em>first.</em></h2>
+      </div>
+      <div class="faq-list">
+        <details class="faq-item" open>
+          <summary>What does Dynamo need on the host?</summary>
+          <p>A Linux environment with <code>Xvfb</code> and <code>ffmpeg</code> installed, and Python 3.10+. It's designed for Docker, Kubernetes pods, CI runners, and computer-use sandboxes — no physical display or GPU required.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Does it work with Playwright, Selenium or computer-use agents?</summary>
+          <p>Yes. Anything that renders to an X11 display can be recorded. Launch your browser or GUI inside the <code>VisualHarness</code> context and Dynamo captures it; call <code>log_action()</code> from your agent loop to anchor telemetry.</p>
+        </details>
+        <details class="faq-item">
+          <summary>How does the token reducer decide which frames to keep?</summary>
+          <p>It combines FFmpeg scene detection (e.g. <code>select='gt(scene,0.05)'</code>) or image-difference scoring with exact frames at each logged action timestamp, then deduplicates and downsamples to your max bounding box.</p>
+        </details>
+        <details class="faq-item">
+          <summary>What happens if my agent crashes mid-recording?</summary>
+          <p>The context manager sends <code>SIGINT</code> to the recorder on exit — including on exceptions — so FFmpeg finalizes the <code>moov</code> atom and the MP4 stays playable.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Is any data sent to Dynamo's servers?</summary>
+          <p>No. Dynamo is a local Python package. All recordings, frames and telemetry are written to paths you specify.</p>
+        </details>
+      </div>
+    </section>
+
+    <!-- ============ DEMO FORM ============ -->
+    <section id="demo-section" class="section container">
+      <div class="demo">
+        <div class="demo-copy">
+          <p class="eyebrow">Get started</p>
+          <h2 class="section-title">Ship agents you can <em>actually see.</em></h2>
+          <p class="section-sub">Tell us about your agent stack. An engineer — not a sales rep — will reply within one business day.</p>
+          <ul class="demo-points">
+            <li><i class="fa-solid fa-check"></i> Integration walkthrough for your sandbox</li>
+            <li><i class="fa-solid fa-check"></i> Token-budget tuning for your VLM</li>
+            <li><i class="fa-solid fa-check"></i> Fleet deployment &amp; support options</li>
+          </ul>
+        </div>
+        <form class="demo-form" id="demo-form" novalidate>
+          <div class="field-row">
+            <label class="field"><span>Full name</span><input type="text" name="name" required autocomplete="name" placeholder="Ada Lovelace"></label>
+            <label class="field"><span>Work email</span><input type="email" name="email" required autocomplete="email" placeholder="ada@company.com"></label>
+          </div>
+          <div class="field-row">
+            <label class="field"><span>Company</span><input type="text" name="company" required autocomplete="organization" placeholder="Acme AI"></label>
+            <label class="field"><span>Team size</span>
+              <select name="team_size" required>
+                <option value="">Select…</option>
+                <option>1-10</option><option>11-50</option><option>51-200</option><option>201-1000</option><option>1000+</option>
+              </select>
+            </label>
+          </div>
+          <label class="field"><span>Primary use case</span>
+            <select name="use_case" required>
+              <option value="">Select…</option>
+              <option>Coding agents</option>
+              <option>Browser automation / QA</option>
+              <option>Computer-use sandboxes</option>
+              <option>Eval &amp; red-teaming</option>
+              <option>Other</option>
+            </select>
+          </label>
+          <label class="field"><span>Anything else? <em>(optional)</em></span><textarea name="message" rows="3" placeholder="e.g. 400 parallel Playwright agents on EKS, need GIFs in every PR"></textarea></label>
+          <button type="submit" class="btn btn-primary btn-lg btn-block" id="demo-submit">Request a demo <i class="fa-solid fa-arrow-right"></i></button>
+          <p class="form-status" id="form-status" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============ FOOTER ============ -->
+  <footer id="site-footer" class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <a href="#" class="brand"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" width="22" height="22"><rect x="1" y="1" width="30" height="30" rx="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 9h7a7 7 0 0 1 0 14H9z" fill="currentColor"/><circle cx="23" cy="9" r="2.5" fill="#0A0B0D"/></svg></span><span class="brand-name">Dynamo</span></a>
+        <p>The AI Visual &amp; Video Harness for agents that need to see.</p>
+      </div>
+      <nav class="footer-links" aria-label="Footer">
+        <div><h4>Product</h4><a href="#pipeline-section">Architecture</a><a href="#sdk-section">SDK &amp; CLI</a><a href="#tokens-section">Token Reducer</a></div>
+        <div><h4>Company</h4><a href="#enterprise-section">Enterprise</a><a href="#demo-section">Contact</a><a href="#faq-section">FAQ</a></div>
+      </nav>
+    </div>
+    <div class="container footer-base">
+      <span>© 2026 Dynamo. All rights reserved.</span>
+      <span class="mono">agent_visual_harness · built for headless Linux</span>
+    </div>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="js/main.js"></script>
+</body>
+</html>
