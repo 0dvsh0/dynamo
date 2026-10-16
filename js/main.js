@@ -197,18 +197,25 @@
     submitBtn.disabled = true;
     submitBtn.innerHTML = 'Sending… <i class="fa-solid fa-spinner fa-spin"></i>';
     try {
-      const res = await fetch('tables/demo_requests', {
+      const res = await fetch('https://api.web3forms.com/submit', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify(data)
       });
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      form.reset();
-      status.classList.add('ok');
-      status.textContent = '✓ Thanks — an engineer will reach out within one business day.';
+      const result = await res.json();
+      if (res.ok && result.success) {
+        form.reset();
+        status.classList.add('ok');
+        status.textContent = '✓ Thanks! Your demo request has been sent to smasherthedevansh@gmail.com. An engineer will reach out within one business day.';
+      } else {
+        throw new Error(result.message || 'Submission failed. Please try again or email smasherthedevansh@gmail.com directly.');
+      }
     } catch (err) {
       status.classList.add('err');
-      status.textContent = 'Something went wrong. Please try again.';
+      status.textContent = err.message || 'Something went wrong. Please email smasherthedevansh@gmail.com directly.';
     } finally {
       submitBtn.disabled = false;
       submitBtn.innerHTML = 'Request a demo <i class="fa-solid fa-arrow-right"></i>';
