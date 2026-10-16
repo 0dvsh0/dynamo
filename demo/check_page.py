@@ -16,6 +16,10 @@ import re
 import sys
 from pathlib import Path
 
+#: The flat per-image price the demo applies to every workflow equally, so the
+#: comparison between them is fair. It is a price list, not a tokenizer.
+TOKENS_PER_IMAGE = 1100
+
 # Windows consoles default to cp1252 and cannot encode the arrows and box
 # characters this report prints. Reconfigure before anything is written, or the
 # checker fails on the very output that says everything passed.
@@ -476,6 +480,28 @@ def check_landing(problems: list[str]) -> None:
         problems.append(
             f"the landing page does not state the counted saving of {ratio:.1f}%"
         )
+
+    # The token calculator's defaults are meant to be a real session, so the
+    # measured session figures have to still be the ones quoted beside it.
+    try:
+        results = json.loads(RESULTS.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return
+    dynamo = results.get("dynamo") or {}
+    frames = ((dynamo.get("video_info") or {}).get("frames"))
+    tokens = dynamo.get("tokens")
+    if frames and tokens:
+        measured_reduction = round(100.0 * (1 - tokens / (frames * TOKENS_PER_IMAGE)), 1)
+        for label, shown in (
+            ("raw frame count", f"{frames:,}"),
+            ("reduced token count", f"{tokens:,}"),
+            ("measured reduction", f"{measured_reduction}%"),
+        ):
+            if shown not in text:
+                problems.append(
+                    f"the landing page does not quote the {label} ({shown}) from the "
+                    f"measured run behind the token calculator"
+                )
 
 
 def main() -> int:

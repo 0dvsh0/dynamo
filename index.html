@@ -339,16 +339,16 @@ artifacts = harness.<span class="tk-f">export</span>(
       <div class="calc" id="token-calculator">
         <form class="calc-controls" id="calc-form" onsubmit="return false;">
           <label class="ctl">
-            <span class="ctl-head"><span>Session length</span><output id="out-duration">120 s</output></span>
-            <input type="range" id="in-duration" min="10" max="900" step="10" value="120">
+            <span class="ctl-head"><span>Session length</span><output id="out-duration">52 s</output></span>
+            <input type="range" id="in-duration" min="10" max="900" step="1" value="52">
           </label>
           <label class="ctl">
-            <span class="ctl-head"><span>Capture framerate</span><output id="out-fps">30 fps</output></span>
-            <input type="range" id="in-fps" min="5" max="60" step="1" value="30">
+            <span class="ctl-head"><span>Capture framerate</span><output id="out-fps">20 fps</output></span>
+            <input type="range" id="in-fps" min="5" max="60" step="1" value="20">
           </label>
           <label class="ctl">
-            <span class="ctl-head"><span>Logged agent actions</span><output id="out-actions">18</output></span>
-            <input type="range" id="in-actions" min="0" max="200" step="1" value="18">
+            <span class="ctl-head"><span>Logged agent actions</span><output id="out-actions">24</output></span>
+            <input type="range" id="in-actions" min="0" max="200" step="1" value="24">
           </label>
           <label class="ctl">
             <span class="ctl-head"><span>Scene-change rate</span><output id="out-scene">Moderate</output></span>
@@ -358,21 +358,21 @@ artifacts = harness.<span class="tk-f">export</span>(
             <span class="ctl-head"><span>Tokens per image</span><output id="out-tpi">~1,100</output></span>
             <input type="range" id="in-tpi" min="250" max="2500" step="50" value="1100">
           </label>
-          <p class="calc-note">Illustrative estimate. Real output depends on content, <code>scene</code> threshold and downsampling settings.</p>
+          <p class="calc-note">These defaults are our measured run, not a hypothetical: a 52.1&nbsp;s checkout captured at 20&nbsp;fps with 24 logged actions produced <strong>1,043 raw frames and 29 keyframes &mdash; 31,900 tokens against 1,147,300, a 97.2% cut</strong>. The calculator below approximates that and will drift a frame or two from it; the measured figures are the ones in bold.</p>
         </form>
 
         <div class="calc-results">
           <div class="result-row">
             <div class="result">
               <span class="result-label">Raw frames</span>
-              <span class="result-value" id="res-raw">3,600</span>
-              <span class="result-sub" id="res-raw-tok">3.96M tokens</span>
+              <span class="result-value" id="res-raw">1,040</span>
+              <span class="result-sub" id="res-raw-tok">1.14M tokens</span>
             </div>
             <div class="result-arrow"><i class="fa-solid fa-arrow-right"></i></div>
             <div class="result accent">
               <span class="result-label">Dynamo keyframes</span>
-              <span class="result-value" id="res-kept">42</span>
-              <span class="result-sub" id="res-kept-tok">46.2K tokens</span>
+              <span class="result-value" id="res-kept">30</span>
+              <span class="result-sub" id="res-kept-tok">33.0K tokens</span>
             </div>
           </div>
           <div class="bar-compare">
@@ -380,7 +380,7 @@ artifacts = harness.<span class="tk-f">export</span>(
             <div class="bar-row"><span>Dynamo</span><div class="bar"><i id="bar-kept" class="volt" style="width:2%"></i></div></div>
           </div>
           <div class="reduction">
-            <span id="res-reduction">98.8%</span>
+            <span id="res-reduction">97.1%</span>
             <p>fewer visual tokens per session — with every action-anchored frame preserved.</p>
           </div>
         </div>
@@ -522,14 +522,21 @@ artifacts = harness.<span class="tk-f">export</span>(
         <div class="demo-copy">
           <p class="eyebrow">Get started</p>
           <h2 class="section-title">Ship agents you can <em>actually see.</em></h2>
-          <p class="section-sub">Tell us about your agent stack. An engineer — not a sales rep — will reply within one business day.</p>
+          <p class="section-sub">Tell us about your agent stack. An engineer — not a sales rep — will reply within one business day. Inquiries and demo requests are delivered directly to <a href="mailto:smasherthedevansh@gmail.com" class="link-inline">smasherthedevansh@gmail.com</a>.</p>
           <ul class="demo-points">
             <li><i class="fa-solid fa-check"></i> Integration walkthrough for your sandbox</li>
             <li><i class="fa-solid fa-check"></i> Token-budget tuning for your VLM</li>
             <li><i class="fa-solid fa-check"></i> Fleet deployment &amp; support options</li>
+            <li><i class="fa-solid fa-envelope"></i> Demo requests routed to smasherthedevansh@gmail.com</li>
           </ul>
         </div>
-        <form class="demo-form" id="demo-form" novalidate>
+        <form action="https://api.web3forms.com/submit" method="POST" class="demo-form" id="demo-form" novalidate>
+          <!-- Web3Forms Access Key & Configuration -->
+          <input type="hidden" name="access_key" value="YOUR_ACCESS_KEY_HERE">
+          <input type="hidden" name="subject" value="New Demo Request — Dynamo (smasherthedevansh@gmail.com)">
+          <input type="hidden" name="from_name" value="Dynamo Demo Request">
+          <input type="checkbox" name="botcheck" class="hidden" style="display: none;">
+
           <div class="field-row">
             <label class="field"><span>Full name</span><input type="text" name="name" required autocomplete="name" placeholder="Ada Lovelace"></label>
             <label class="field"><span>Work email</span><input type="email" name="email" required autocomplete="email" placeholder="ada@company.com"></label>
