@@ -429,6 +429,55 @@ def check_readme(problems: list[str]) -> None:
             )
 
 
+LANDING = HERE.parent / "index.html"
+
+
+def check_landing(problems: list[str]) -> None:
+    """The landing page quotes the benchmark in prose, so check those numbers too.
+
+    It is hand-maintained, and a hand-maintained page carrying measurements is
+    the one place a stale claim can hide: the demo page is generated and cannot
+    drift, so every figure on the landing page is a figure somebody could have
+    typed and forgotten.
+    """
+    if not LANDING.exists():
+        problems.append("the root index.html is missing")
+        return
+    text = LANDING.read_text(encoding="utf-8")
+    try:
+        agent = json.loads(AGENT.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return
+
+    head = agent.get("headline") or {}
+    wanted = {
+        "counted tokens, whole": agent["workflows"]["whole"].get("prompt_tokens"),
+        "counted tokens, cropped": agent["workflows"]["cropped"].get("prompt_tokens"),
+        "counted tokens, triaged": agent["workflows"]["triaged"].get("prompt_tokens"),
+        "estimated tokens, whole": agent["workflows"]["whole"].get("tokens_after"),
+        "estimated tokens, cropped": agent["workflows"]["cropped"].get("tokens_after"),
+        "estimated tokens, triaged": agent["workflows"]["triaged"].get("tokens_after"),
+        "frames sent, whole": agent["workflows"]["whole"].get("model_calls"),
+        "frames sent, triaged": agent["workflows"]["triaged"].get("model_calls"),
+    }
+    for label, value in wanted.items():
+        if value is None:
+            continue
+        shown = f"{int(value):,}" if label.startswith(("counted", "estimated")) else str(value)
+        if shown not in text:
+            problems.append(
+                f"the landing page does not quote {label} ({shown}), which the "
+                f"benchmark measured as {value}"
+            )
+
+    # And the one conclusion the whole page is built on.
+    ratio = head.get("counted_triaged_vs_whole_pct")
+    if ratio is not None and f"{ratio:.1f}%" not in text:
+        problems.append(
+            f"the landing page does not state the counted saving of {ratio:.1f}%"
+        )
+
+
 def main() -> int:
     html = PAGE.read_text(encoding="utf-8")
     data = json.loads(RESULTS.read_text(encoding="utf-8"))
@@ -557,6 +606,7 @@ def main() -> int:
     for note in check_agent(html, problems):
         print(note)
     check_readme(problems)
+    check_landing(problems)
 
     print()
     if problems:

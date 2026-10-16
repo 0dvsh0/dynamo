@@ -33,7 +33,7 @@
       </ul>
       <div class="nav-cta">
         <a href="#sdk-section" class="btn btn-ghost btn-sm"><i class="fa-brands fa-github"></i> Docs</a>
-        <a href="#demo-section" class="btn btn-primary btn-sm">Talk to us</a>
+        <a href="#measured-section" class="btn btn-primary btn-sm">The measurements</a>
       </div>
       <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu" aria-expanded="false"><i class="fa-solid fa-bars"></i></button>
     </nav>
@@ -44,7 +44,7 @@
     <section id="hero-section" class="hero container">
       <div class="hero-copy">
         <a href="#pipeline-section" class="pill">
-          <span class="pill-dot"></span> v1.0 · Headless X11 · Python 3.10+ <i class="fa-solid fa-arrow-right"></i>
+          <span class="pill-dot"></span> v1.1.0 · Headless X11 · Python 3.10+ · 416 tests green <i class="fa-solid fa-arrow-right"></i>
         </a>
         <h1 class="hero-title">
           Give your agents <em>eyes.</em><br>
@@ -61,7 +61,7 @@
             <code>pip install agent-visual-harness</code>
             <i class="fa-regular fa-copy copy-icon"></i>
           </button>
-          <a href="#demo-section" class="btn btn-primary btn-lg">Book an enterprise demo <i class="fa-solid fa-arrow-right"></i></a>
+          <a href="#demo-section" class="btn btn-primary btn-lg">See the measured benchmark <i class="fa-solid fa-arrow-right"></i></a>
         </div>
         <ul class="hero-proof">
           <li><i class="fa-solid fa-check"></i> Zero GPU required</li>
@@ -133,12 +133,12 @@
         <article class="problem-card">
           <span class="problem-num">01</span>
           <h3>Raw video blows the context window</h3>
-          <p>A 60-second session at 30 fps is 1,800 frames. Feed that to a multimodal model and you pay for 1,790 near-identical images.</p>
+          <p>Sample a real session on the wall clock, the way the hand-rolled workflow does, and you pay for a thousand-plus frames. In our run, <strong>19 of every 50 consecutive frames were pixel-identical</strong> — the model paid full price for an unchanged screen.</p>
         </article>
         <article class="problem-card">
           <span class="problem-num">02</span>
           <h3>DIY ffmpeg scripts break in CI</h3>
-          <p>Race conditions on Xvfb startup, corrupted MP4s from <code>SIGKILL</code>, missing <code>moov</code> atoms, 40 MB GIFs nobody can open in a PR.</p>
+          <p>Race conditions on Xvfb startup, and corrupted MP4s from <code>SIGKILL</code>. Our DIY workflow lost its file to a missing <code>moov</code> atom on <strong>every run</strong>; the harness kept the file and all four logged actions. The 40&nbsp;MB GIF claim we started with was fiction, by the way — both GIFs measured about 2&nbsp;MB.</p>
         </article>
         <article class="problem-card">
           <span class="problem-num">03</span>
@@ -152,7 +152,7 @@
     <section id="pipeline-section" class="section container">
       <div class="section-head">
         <p class="eyebrow">Architecture</p>
-        <h2 class="section-title">Five modules. One harness. <em>From framebuffer to pull request.</em></h2>
+        <h2 class="section-title">Six modules. One harness. <em>From framebuffer to pull request.</em></h2>
         <p class="section-sub">Each layer is independently usable, fully typed, and battle-tested against headless Linux edge cases.</p>
       </div>
 
@@ -228,6 +228,20 @@
             <li><span>typing</span><b>fully typed</b></li>
           </ul>
         </article>
+
+        <article class="module-card" data-step="F">
+          <header>
+            <span class="module-icon"><i class="fa-solid fa-layer-group"></i></span>
+            <code class="module-file">vision.py</code>
+          </header>
+          <h3>Model Routing Layer</h3>
+          <p>Routes each frame to an open-weight model, or to no model at all: skip unchanged frames, let a cheap text decision model score the survivors, and crop what is left to what the diff says moved. Records what the model was <em>actually charged</em> beside what we estimated.</p>
+          <ul class="module-specs">
+            <li><span>primary</span><b>qwen3-vl:4b (Apache-2.0)</b></li>
+            <li><span>filter</span><b>laya typed decisions</b></li>
+            <li><span>deps</span><b>none — urllib</b></li>
+          </ul>
+        </article>
       </div>
     </section>
 
@@ -283,7 +297,7 @@ artifacts = harness.<span class="tk-f">export</span>(
 <span class="tk-cm"># Produce a token-budgeted keyframe set for your VLM</span>
 <span class="tk-p">$</span> dynamo keyframes ./session --scene 0.05 --max-size 1280 \
     --format webp --out output/vlm_frames/
-<span class="tk-ok">✓ 24 keyframes · 1,800 frames scanned · manifest.json written</span></code></pre>
+<span class="tk-ok">✓ 29 keyframes · 1,042 frames scanned · manifest.json written</span></code></pre>
 <pre class="code-panel" data-panel="docker"><code><span class="tk-k">FROM</span> python:3.12-slim
 
 <span class="tk-k">RUN</span> apt-get update &amp;&amp; apt-get install -y --no-install-recommends \
@@ -372,6 +386,30 @@ artifacts = harness.<span class="tk-f">export</span>(
         </div>
       </div>
     </section>
+    <!-- ============ MEASURED ============ -->
+    <section id="measured-section" class="section container">
+      <div class="section-head">
+        <p class="eyebrow">The measurements</p>
+        <h2 class="section-title">We ran the benchmark. <em>It corrected us.</em></h2>
+        <p class="section-sub">A real Chromium drives a real checkout &mdash; card declined twice, retried, captured on the third attempt &mdash; and the same 29 keyframes reach a local Qwen3-VL-4B three different ways. Two token columns, because they disagree.</p>
+      </div>
+      <table class="compare-table">
+        <thead>
+          <tr><th scope="col">How the frames reach the model</th><th scope="col">Frames sent</th><th scope="col">Estimated tokens</th><th scope="col">Counted by the model</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>A &middot; every keyframe, whole</td><td>29</td><td>22,707</td><td>32,132</td></tr>
+          <tr><td>B &middot; cropped to what the diff says moved</td><td>29</td><td>10,947</td><td>32,040</td></tr>
+          <tr><td>C &middot; skip unchanged &rarr; filter &rarr; crop</td><td>24</td><td>8,575</td><td class="col-dynamo"><b>26,528</b></td></tr>
+        </tbody>
+      </table>
+      <div class="enterprise-grid" style="margin-top:2rem">
+        <div class="ent-item"><i class="fa-solid fa-scissors"></i><h3>Cropping saved nothing</h3><p>We estimated a 52% cut and were wrong. The server resizes every image to a fixed budget before the vision encoder sees it: 1280&times;800 and 128&times;80 both cost 1,108 tokens, and a 25&times;16 crop cost <em>more</em>. The real bill moved 0.3%.</p></div>
+        <div class="ent-item"><i class="fa-solid fa-filter"></i><h3>Skipping paid 82.6%</h3><p>A cheap text decision model (Laya) scored each frame and dropped 5 of 29 &mdash; p = 0.05 to 0.10. Not sending the frame is the lever that actually reduces what you are charged.</p></div>
+        <div class="ent-item"><i class="fa-solid fa-triangle-exclamation"></i><h3>Three bugs only a clean machine sees</h3><p>An 8-byte stub frame that walked past a zero-byte guard, a single-threaded storefront that stalled the browser, and a gallery gated on a file written four lines later. All fixed, all tested.</p></div>
+        <div class="ent-item"><i class="fa-solid fa-scale-unbalanced"></i><h3>The GIF is not smaller</h3><p>Our own two-pass palette came out 4% <em>larger</em> than the naive GIF on dense browser chrome. We changed the caption rather than keep the claim.</p></div>
+      </div>
+    </section>
 
     <!-- ============ ARTIFACTS ============ -->
     <section id="artifacts-section" class="section container">
@@ -421,7 +459,7 @@ artifacts = harness.<span class="tk-f">export</span>(
             <tr><td>Timestamped action telemetry</td><td><i class="fa-solid fa-xmark no"></i></td><td><i class="fa-solid fa-xmark no"></i></td><td class="col-dynamo"><i class="fa-solid fa-check yes"></i></td></tr>
             <tr><td>Click overlays rendered on video</td><td><i class="fa-solid fa-xmark no"></i></td><td><i class="fa-solid fa-xmark no"></i></td><td class="col-dynamo"><i class="fa-solid fa-check yes"></i></td></tr>
             <tr><td>Scene + action-anchored keyframes for VLMs</td><td><i class="fa-solid fa-minus mid"></i></td><td><i class="fa-solid fa-xmark no"></i></td><td class="col-dynamo"><i class="fa-solid fa-check yes"></i></td></tr>
-            <tr><td>Small PR-ready GIFs</td><td><i class="fa-solid fa-xmark no"></i></td><td><i class="fa-solid fa-minus mid"></i></td><td class="col-dynamo"><i class="fa-solid fa-check yes"></i></td></tr>
+            <tr><td>PR-ready GIF with click overlays baked in</td><td><i class="fa-solid fa-xmark no"></i></td><td><i class="fa-solid fa-xmark no"></i></td><td class="col-dynamo"><i class="fa-solid fa-check yes"></i></td></tr>
             <tr><td>Python SDK + CLI parity</td><td><i class="fa-solid fa-minus mid"></i></td><td><i class="fa-solid fa-xmark no"></i></td><td class="col-dynamo"><i class="fa-solid fa-check yes"></i></td></tr>
           </tbody>
         </table>
@@ -435,7 +473,7 @@ artifacts = harness.<span class="tk-f">export</span>(
           <p class="eyebrow">Enterprise</p>
           <h2 class="section-title">Visual observability your <em>security team</em> will sign off on.</h2>
           <p class="section-sub">Dynamo is a library, not a SaaS. Recordings, frames and telemetry are written to storage you control — nothing phones home.</p>
-          <a href="#demo-section" class="btn btn-primary btn-lg">Talk to engineering <i class="fa-solid fa-arrow-right"></i></a>
+          <a href="#measured-section" class="btn btn-primary btn-lg">Read what we actually measured <i class="fa-solid fa-arrow-right"></i></a>
         </div>
         <div class="enterprise-grid">
           <div class="ent-item"><i class="fa-solid fa-shield-halved"></i><h3>Zero data egress</h3><p>Runs entirely in your VPC, air-gapped clusters, or ephemeral sandboxes.</p></div>
@@ -443,7 +481,7 @@ artifacts = harness.<span class="tk-f">export</span>(
           <div class="ent-item"><i class="fa-solid fa-scale-balanced"></i><h3>Audit-grade evidence</h3><p>Immutable video + action timelines for agent governance, compliance and incident review.</p></div>
           <div class="ent-item"><i class="fa-solid fa-microchip"></i><h3>CPU-only, low overhead</h3><p>No GPU dependency. Tunable framerate and CRF to fit tight sandbox budgets.</p></div>
           <div class="ent-item"><i class="fa-solid fa-plug"></i><h3>Model-agnostic</h3><p>Keyframes work with any multimodal model or in-house VLM — no vendor lock-in.</p></div>
-          <div class="ent-item"><i class="fa-solid fa-headset"></i><h3>Priority support</h3><p>Architecture reviews, private Slack channel and integration help for your agent platform.</p></div>
+          <div class="ent-item"><i class="fa-solid fa-box-open"></i><h3>Zero runtime dependencies</h3><p>Standard library only. <code>ffmpeg</code> and <code>tesseract</code> are optional extras, not requirements.</p></div>
         </div>
       </div>
     </section>
