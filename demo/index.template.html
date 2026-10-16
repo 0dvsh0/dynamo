@@ -524,7 +524,7 @@ footer .mono{font-family:var(--mono)}
         <div class="metric">PNG bytes returned to the caller</div></div>
       <div class="cap"><div class="ic"><i class="fa-solid fa-layer-group"></i></div>
         <h4>Two-pass GIF</h4>
-        <p><code>palettegen</code> with <code>stats_mode=diff</code>, then bayer dithering at 128 colours. On this content the byte win is modest — the real gain is banding on flat UI.</p>
+        <p><code>palettegen</code> with <code>stats_mode=diff</code>, then bayer dithering at 128 colours. On this content it is not a byte win at all — the metric below shows the two-pass file coming out marginally <em>larger</em>. The real gain is banding on flat UI.</p>
         <div class="metric">{{dynamo.gif_bytes|kb}} vs {{diy.gif_bytes|kb}} at identical fps and size</div></div>
       <div class="cap"><div class="ic"><i class="fa-solid fa-gauge-high"></i></div>
         <h4>CPU only</h4>
